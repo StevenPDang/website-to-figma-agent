@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "tsBuildInfoFile": "dist/figma-scene.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts"]
+}

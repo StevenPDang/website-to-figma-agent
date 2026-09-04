@@ -212,13 +212,13 @@
 
 **Acceptance criteria:**
 
-- [ ] Core fixture IR compiles to a schema-valid, deterministic scene.
-- [ ] Text remains text and inferred Auto Layout preserves geometry within declared tolerances.
-- [ ] Every eligible source node is created or explicitly classified.
+- [x] Core fixture IR compiles to a schema-valid, deterministic scene.
+- [x] Text remains text and inferred Auto Layout preserves geometry within declared tolerances.
+- [x] Every eligible source node is created or explicitly classified.
 
 **Verification:**
 
-- [ ] Run scene compiler unit tests and golden semantic-invariant tests.
+- [x] Run scene compiler unit tests and golden semantic-invariant tests.
 
 **Dependencies:** Tasks 8 and 9
 

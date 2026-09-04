@@ -124,6 +124,10 @@ export interface FigmaSceneNode {
     | 'instance'
     | 'group';
   name: string;
+  rect?: { x: number; y: number; width: number; height: number };
+  text?: string;
+  styles?: Record<string, string>;
+  layoutMode?: 'NONE' | 'HORIZONTAL' | 'VERTICAL';
 }
 
 export type FigmaSceneArtifact = ArtifactEnvelope<

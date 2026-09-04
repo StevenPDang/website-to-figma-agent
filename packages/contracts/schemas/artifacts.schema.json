@@ -246,7 +246,24 @@
             "group"
           ]
         },
-        "name": { "type": "string", "minLength": 1, "maxLength": 512 }
+        "name": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "rect": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "width": { "type": "number", "minimum": 0 },
+            "height": { "type": "number", "minimum": 0 }
+          },
+          "required": ["x", "y", "width", "height"]
+        },
+        "text": { "type": "string", "maxLength": 100000 },
+        "styles": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "maxLength": 4096 }
+        },
+        "layoutMode": { "enum": ["NONE", "HORIZONTAL", "VERTICAL"] }
       },
       "required": [
         "sceneNodeId",
