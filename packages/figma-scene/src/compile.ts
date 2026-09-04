@@ -61,8 +61,12 @@ export function compileScene(
       ...(source.text ? { text: source.text } : {}),
       ...(source.styles ? { styles: source.styles } : {}),
       ...(fills ? { fills } : {}),
-      ...(Number.isFinite(opacity) ? { opacity } : {}),
-      ...(Number.isFinite(radius) ? { cornerRadius: radius } : {}),
+      ...(typeof opacity === 'number' && Number.isFinite(opacity)
+        ? { opacity }
+        : {}),
+      ...(typeof radius === 'number' && Number.isFinite(radius)
+        ? { cornerRadius: radius }
+        : {}),
       ...(effects ? { effects } : {}),
       ...(layout
         ? {

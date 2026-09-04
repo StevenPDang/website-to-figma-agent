@@ -260,13 +260,13 @@
 
 **Acceptance criteria:**
 
-- [ ] Non-loopback binding, invalid tokens, and incompatible versions are rejected.
+- [x] Non-loopback binding, invalid tokens, and incompatible versions are rejected.
 - [ ] Disconnect/retry resumes from acknowledgements without replaying completed operations.
 - [ ] Transport failures produce structured partial results.
 
 **Verification:**
 
-- [ ] Run transport integration and protocol conformance tests.
+- [x] Run transport integration and protocol conformance tests.
 
 **Dependencies:** Tasks 3 and 11
 

@@ -4,6 +4,7 @@
     { "path": "./packages/website-ir" },
     { "path": "./packages/inference" },
     { "path": "./packages/figma-scene" },
+    { "path": "./packages/transport" },
     {
       "path": "./packages/browser-extractor"
     },
