@@ -53,6 +53,10 @@ export interface AssetReference {
   sourceNodeId: string;
   kind: 'image' | 'svg' | 'font' | 'video' | 'canvas' | 'other';
   contentHash?: string;
+  mimeType?: string;
+  width?: number;
+  height?: number;
+  byteLength?: number;
 }
 
 export type RawCaptureArtifact = ArtifactEnvelope<

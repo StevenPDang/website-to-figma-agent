@@ -124,13 +124,13 @@
 
 **Acceptance criteria:**
 
-- [ ] Screenshot dimensions match the requested viewport and full document capture policy.
-- [ ] Images and SVGs are content-addressed and traceable to source nodes.
-- [ ] Missing, oversized, expiring, and unsupported assets return structured diagnostics.
+- [x] Screenshot dimensions match the requested viewport and full document capture policy.
+- [x] Images and SVGs are content-addressed and traceable to source nodes.
+- [x] Missing, oversized, expiring, and unsupported assets return structured diagnostics.
 
 **Verification:**
 
-- [ ] Run asset-capture tests and inspect generated artifacts for the media fixture.
+- [x] Run asset-capture tests and inspect generated artifacts for the media fixture.
 
 **Dependencies:** Task 5
 

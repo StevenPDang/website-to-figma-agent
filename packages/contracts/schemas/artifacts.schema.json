@@ -84,7 +84,11 @@
         "kind": {
           "enum": ["image", "svg", "font", "video", "canvas", "other"]
         },
-        "contentHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+        "contentHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "mimeType": { "type": "string", "maxLength": 256 },
+        "width": { "type": "number", "minimum": 0 },
+        "height": { "type": "number", "minimum": 0 },
+        "byteLength": { "type": "integer", "minimum": 0 }
       },
       "required": ["assetId", "sourceNodeId", "kind"]
     },
