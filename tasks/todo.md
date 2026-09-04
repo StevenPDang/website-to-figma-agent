@@ -192,13 +192,13 @@
 
 **Acceptance criteria:**
 
-- [ ] Repeated button/card fixtures produce stable candidates and instance mappings.
-- [ ] Near-matches preserve meaningful overrides without merging unrelated structures.
-- [ ] Every grouping decision includes evidence and confidence.
+- [x] Repeated button/card fixtures produce stable candidates and instance mappings.
+- [x] Near-matches preserve meaningful overrides without merging unrelated structures.
+- [x] Every grouping decision includes evidence and confidence.
 
 **Verification:**
 
-- [ ] Run component inference unit and fixture tests.
+- [x] Run component inference unit and fixture tests.
 
 **Dependencies:** Task 8
 
