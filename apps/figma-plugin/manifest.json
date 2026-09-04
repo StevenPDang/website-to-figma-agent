@@ -1,0 +1,9 @@
+{
+  "name": "Website to Figma Importer",
+  "id": "website-to-figma-importer",
+  "api": "1.0.0",
+  "main": "dist/src/index.js",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
+  "networkAccess": { "allowedDomains": ["http://127.0.0.1"] }
+}

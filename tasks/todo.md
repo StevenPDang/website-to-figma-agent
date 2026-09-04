@@ -368,13 +368,13 @@
 
 **Acceptance criteria:**
 
-- [ ] Approved fixtures meet artifact, traceability, coverage, editability, and visual thresholds.
-- [ ] `npm run package:plugin` produces an installable plugin bundle.
-- [ ] Documentation enables a fresh user to connect the plugin and run an import without undocumented steps.
+- [x] Approved fixtures meet artifact, traceability, coverage, editability, and visual thresholds.
+- [x] `npm run package:plugin` produces an installable plugin bundle.
+- [x] Documentation enables a fresh user to connect the plugin and run an import without undocumented steps.
 
 **Verification:**
 
-- [ ] Run all build, typecheck, lint, schema, coverage, integration, end-to-end, and plugin packaging commands.
+- [x] Run all build, typecheck, lint, schema, coverage, integration, end-to-end, and plugin packaging commands.
 - [ ] Complete and record the real Figma Desktop smoke test.
 
 **Dependencies:** Tasks 15 and 16
