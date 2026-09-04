@@ -144,13 +144,13 @@
 
 **Acceptance criteria:**
 
-- [ ] Equivalent browser values normalize deterministically while preserving source IDs.
-- [ ] Raw capture remains immutable and inference fields are absent from Website IR.
-- [ ] Invalid references and non-finite geometry produce structured errors.
+- [x] Equivalent browser values normalize deterministically while preserving source IDs.
+- [x] Raw capture remains immutable and inference fields are absent from Website IR.
+- [x] Invalid references and non-finite geometry produce structured errors.
 
 **Verification:**
 
-- [ ] Run Website IR unit tests and a raw-capture-to-IR integration test.
+- [x] Run Website IR unit tests and a raw-capture-to-IR integration test.
 
 **Dependencies:** Tasks 5 and 6
 

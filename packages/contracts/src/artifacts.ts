@@ -74,6 +74,10 @@ export interface WebsiteIrNode {
   parentNodeId: string | null;
   childNodeIds: string[];
   kind: 'frame' | 'text' | 'rectangle' | 'ellipse' | 'image' | 'svg' | 'group';
+  rect?: { x: number; y: number; width: number; height: number };
+  text?: string;
+  styles?: Record<string, string>;
+  visible?: boolean;
 }
 
 export type WebsiteIrArtifact = ArtifactEnvelope<
