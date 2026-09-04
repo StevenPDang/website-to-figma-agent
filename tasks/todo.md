@@ -300,13 +300,13 @@
 
 **Acceptance criteria:**
 
-- [ ] Supported scene properties create equivalent adapter operations.
-- [ ] Missing fonts produce a partial result with deterministic substitution and source-linked warnings.
-- [ ] Dependency failures affect only dependent nodes and are reflected in import results.
+- [x] Supported scene properties create equivalent adapter operations.
+- [x] Missing fonts produce a partial result with deterministic substitution and source-linked warnings.
+- [x] Dependency failures affect only dependent nodes and are reflected in import results.
 
 **Verification:**
 
-- [ ] Run advanced importer tests and perform a bounded Figma Desktop smoke test.
+- [x] Run advanced importer tests and perform a bounded Figma Desktop smoke test.
 
 **Dependencies:** Task 13
 
