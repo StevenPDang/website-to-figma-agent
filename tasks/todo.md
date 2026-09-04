@@ -375,7 +375,7 @@
 **Verification:**
 
 - [x] Run all build, typecheck, lint, schema, coverage, integration, end-to-end, and plugin packaging commands.
-- [ ] Complete and record the real Figma Desktop smoke test.
+- [ ] Complete and record the real Figma Desktop smoke test (blocked: Figma Desktop unavailable in this environment; see `docs/smoke-test.md`).
 
 **Dependencies:** Tasks 15 and 16
 
@@ -385,8 +385,8 @@
 
 ### Checkpoint E: MVP Complete
 
-- [ ] All specification success criteria pass.
-- [ ] Coverage meets or exceeds 80% line and branch coverage in required packages.
-- [ ] Figma Desktop smoke test is recorded.
-- [ ] Known limitations and partial-result behavior are documented.
+- [ ] All specification success criteria pass (pending live plugin orchestration and production pixel-level QA).
+- [ ] Coverage meets or exceeds 80% line and branch coverage in required packages (current aggregate branch coverage: 66.85%).
+- [ ] Figma Desktop smoke test is recorded (blocked; see `docs/smoke-test.md`).
+- [x] Known limitations and partial-result behavior are documented.
 - [ ] Human reviews the completed MVP.
