@@ -1,0 +1,12 @@
+{
+  "name": "@website-to-figma/inference",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "dependencies": {
+    "@website-to-figma/contracts": "0.0.0",
+    "@website-to-figma/website-ir": "0.0.0"
+  }
+}

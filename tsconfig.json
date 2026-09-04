@@ -2,6 +2,7 @@
   "files": [],
   "references": [
     { "path": "./packages/website-ir" },
+    { "path": "./packages/inference" },
     {
       "path": "./packages/browser-extractor"
     },

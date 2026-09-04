@@ -172,13 +172,13 @@
 
 **Acceptance criteria:**
 
-- [ ] Each decision contains evidence, confidence, and fallback behavior.
-- [ ] Flex, grid-like, and absolute-overlay fixtures receive the expected classifications.
-- [ ] Ambiguous layouts retain editable geometry without fabricated certainty.
+- [x] Each decision contains evidence, confidence, and fallback behavior.
+- [x] Flex, grid-like, and absolute-overlay fixtures receive the expected classifications.
+- [x] Ambiguous layouts retain editable geometry without fabricated certainty.
 
 **Verification:**
 
-- [ ] Run inference unit tests and layout fixture integration tests.
+- [x] Run inference unit tests and layout fixture integration tests.
 
 **Dependencies:** Task 7
 
