@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Website to Figma'
+  short_description: 'Reconstruct websites as editable Figma documents'
+  default_prompt: 'Use $website-to-figma to convert a website into an editable Figma document.'
