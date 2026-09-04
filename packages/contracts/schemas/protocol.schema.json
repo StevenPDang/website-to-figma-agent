@@ -1,0 +1,282 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://website-to-figma.local/schemas/protocol/1.0.0",
+  "title": "Website-to-Figma Transport Message",
+  "oneOf": [
+    { "$ref": "#/$defs/hello" },
+    { "$ref": "#/$defs/helloAck" },
+    { "$ref": "#/$defs/sceneBegin" },
+    { "$ref": "#/$defs/sceneChunk" },
+    { "$ref": "#/$defs/operationAck" },
+    { "$ref": "#/$defs/progress" },
+    { "$ref": "#/$defs/sceneComplete" },
+    { "$ref": "#/$defs/importComplete" },
+    { "$ref": "#/$defs/error" }
+  ],
+  "$defs": {
+    "stableId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*:.+$",
+      "maxLength": 512
+    },
+    "base": {
+      "type": "object",
+      "properties": {
+        "protocolVersion": { "const": "1.0.0" },
+        "runId": { "$ref": "#/$defs/stableId" }
+      },
+      "required": ["protocolVersion", "runId"]
+    },
+    "hello": {
+      "allOf": [
+        { "$ref": "#/$defs/base" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "protocolVersion": { "const": "1.0.0" },
+            "runId": { "$ref": "#/$defs/stableId" },
+            "type": { "const": "hello" },
+            "authToken": { "type": "string", "minLength": 32, "maxLength": 512 }
+          },
+          "required": ["protocolVersion", "runId", "type", "authToken"]
+        }
+      ]
+    },
+    "helloAck": {
+      "allOf": [
+        { "$ref": "#/$defs/base" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "protocolVersion": { "const": "1.0.0" },
+            "runId": { "$ref": "#/$defs/stableId" },
+            "type": { "const": "hello-ack" },
+            "accepted": { "type": "boolean" },
+            "schemaVersion": { "const": "1.0.0" },
+            "capabilities": {
+              "type": "array",
+              "maxItems": 128,
+              "items": { "type": "string", "minLength": 1, "maxLength": 128 },
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "protocolVersion",
+            "runId",
+            "type",
+            "accepted",
+            "schemaVersion",
+            "capabilities"
+          ]
+        }
+      ]
+    },
+    "sceneBegin": {
+      "allOf": [
+        { "$ref": "#/$defs/base" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "protocolVersion": { "const": "1.0.0" },
+            "runId": { "$ref": "#/$defs/stableId" },
+            "type": { "const": "scene-begin" },
+            "sceneId": { "$ref": "#/$defs/stableId" },
+            "totalOperations": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100000
+            }
+          },
+          "required": [
+            "protocolVersion",
+            "runId",
+            "type",
+            "sceneId",
+            "totalOperations"
+          ]
+        }
+      ]
+    },
+    "operation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "create-node" },
+            "operationId": { "$ref": "#/$defs/stableId" },
+            "sceneNodeId": { "$ref": "#/$defs/stableId" },
+            "nodeKind": { "type": "string", "minLength": 1, "maxLength": 128 }
+          },
+          "required": ["type", "operationId", "sceneNodeId", "nodeKind"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "set-property" },
+            "operationId": { "$ref": "#/$defs/stableId" },
+            "sceneNodeId": { "$ref": "#/$defs/stableId" },
+            "property": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "value": {}
+          },
+          "required": [
+            "type",
+            "operationId",
+            "sceneNodeId",
+            "property",
+            "value"
+          ]
+        }
+      ]
+    },
+    "sceneChunk": {
+      "allOf": [
+        { "$ref": "#/$defs/base" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "protocolVersion": { "const": "1.0.0" },
+            "runId": { "$ref": "#/$defs/stableId" },
+            "type": { "const": "scene-chunk" },
+            "sceneId": { "$ref": "#/$defs/stableId" },
+            "chunkIndex": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100000
+            },
+            "operations": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1000,
+              "items": { "$ref": "#/$defs/operation" }
+            }
+          },
+          "required": [
+            "protocolVersion",
+            "runId",
+            "type",
+            "sceneId",
+            "chunkIndex",
+            "operations"
+          ]
+        }
+      ]
+    },
+    "operationAck": {
+      "allOf": [
+        { "$ref": "#/$defs/base" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "protocolVersion": { "const": "1.0.0" },
+            "runId": { "$ref": "#/$defs/stableId" },
+            "type": { "const": "operation-ack" },
+            "operationId": { "$ref": "#/$defs/stableId" },
+            "status": { "enum": ["applied", "already-applied"] }
+          },
+          "required": [
+            "protocolVersion",
+            "runId",
+            "type",
+            "operationId",
+            "status"
+          ]
+        }
+      ]
+    },
+    "progress": {
+      "allOf": [
+        { "$ref": "#/$defs/base" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "protocolVersion": { "const": "1.0.0" },
+            "runId": { "$ref": "#/$defs/stableId" },
+            "type": { "const": "progress" },
+            "completedOperations": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100000
+            },
+            "totalOperations": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100000
+            }
+          },
+          "required": [
+            "protocolVersion",
+            "runId",
+            "type",
+            "completedOperations",
+            "totalOperations"
+          ]
+        }
+      ]
+    },
+    "sceneComplete": {
+      "allOf": [
+        { "$ref": "#/$defs/base" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "protocolVersion": { "const": "1.0.0" },
+            "runId": { "$ref": "#/$defs/stableId" },
+            "type": { "const": "scene-complete" },
+            "sceneId": { "$ref": "#/$defs/stableId" }
+          },
+          "required": ["protocolVersion", "runId", "type", "sceneId"]
+        }
+      ]
+    },
+    "importComplete": {
+      "allOf": [
+        { "$ref": "#/$defs/base" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "protocolVersion": { "const": "1.0.0" },
+            "runId": { "$ref": "#/$defs/stableId" },
+            "type": { "const": "import-complete" },
+            "status": { "enum": ["success", "partial", "failed"] }
+          },
+          "required": ["protocolVersion", "runId", "type", "status"]
+        }
+      ]
+    },
+    "error": {
+      "allOf": [
+        { "$ref": "#/$defs/base" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "protocolVersion": { "const": "1.0.0" },
+            "runId": { "$ref": "#/$defs/stableId" },
+            "type": { "const": "error" },
+            "code": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "message": { "type": "string", "minLength": 1, "maxLength": 4096 },
+            "retryable": { "type": "boolean" }
+          },
+          "required": [
+            "protocolVersion",
+            "runId",
+            "type",
+            "code",
+            "message",
+            "retryable"
+          ]
+        }
+      ]
+    }
+  }
+}

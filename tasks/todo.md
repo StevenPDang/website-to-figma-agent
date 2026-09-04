@@ -46,23 +46,23 @@
 
 **Dependencies:** Task 1
 
-**Files likely touched:** `packages/contracts/src/artifacts.ts`, `packages/contracts/src/schemas.ts`, `packages/contracts/src/validation.ts`, `packages/contracts/src/artifacts.test.ts`, `packages/contracts/schemas/artifacts.schema.json`
+**Files likely touched:** `packages/contracts/src/artifacts.ts`, `packages/contracts/src/validation.ts`, `packages/contracts/src/artifacts.test.ts`, `packages/contracts/schemas/artifacts.schema.json`
 
 **Estimated scope:** Medium (5 files)
 
-### Task 3: Define the plugin transport protocol
+### Task 3: Define the plugin transport protocol ✅
 
 **Description:** Define version negotiation, ephemeral authentication, scene transfer, progress, acknowledgement, completion, failure, and idempotent operation messages.
 
 **Acceptance criteria:**
 
-- [ ] Incompatible versions and invalid tokens are rejected before mutation authorization.
-- [ ] Every mutation carries a run and operation identifier with deterministic retry semantics.
-- [ ] Protocol validation yields structured errors for invalid state transitions.
+- [x] Incompatible versions and invalid tokens are rejected before mutation authorization.
+- [x] Every mutation carries a run and operation identifier with deterministic retry semantics.
+- [x] Protocol validation yields structured errors for invalid state transitions.
 
 **Verification:**
 
-- [ ] Run protocol state-machine and schema tests in `packages/contracts`.
+- [x] Run protocol state-machine and schema tests in `packages/contracts`.
 
 **Dependencies:** Task 2
 
@@ -72,9 +72,9 @@
 
 ### Checkpoint A
 
-- [ ] Build, typecheck, lint, formatting, tests, and schema validation pass.
-- [ ] Artifact and protocol examples have human-readable validation failures.
-- [ ] Review stable contract boundaries before adding consumers.
+- [x] Build, typecheck, lint, formatting, tests, and schema validation pass.
+- [x] Artifact and protocol examples have human-readable validation failures.
+- [x] Review stable contract boundaries before adding consumers.
 
 ## Phase B: Browser-to-IR Slice
 
