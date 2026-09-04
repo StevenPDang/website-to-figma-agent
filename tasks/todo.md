@@ -348,13 +348,13 @@
 
 **Acceptance criteria:**
 
-- [ ] Identical, tolerably different, and failing image pairs are classified correctly.
-- [ ] Reports include dimensions, thresholds, metrics, discrepancy artifacts, and stage/source context.
-- [ ] Dimension mismatches and missing exports fail clearly.
+- [x] Identical, tolerably different, and failing image pairs are classified correctly.
+- [x] Reports include dimensions, thresholds, metrics, discrepancy artifacts, and stage/source context.
+- [x] Dimension mismatches and missing exports fail clearly.
 
 **Verification:**
 
-- [ ] Run visual-QA unit tests with deterministic image pairs and report fixtures.
+- [x] Run visual-QA unit tests with deterministic image pairs and report fixtures.
 
 **Dependencies:** Tasks 2 and 14
 
