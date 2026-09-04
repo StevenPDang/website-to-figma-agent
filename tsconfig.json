@@ -6,6 +6,7 @@
     { "path": "./packages/figma-scene" },
     { "path": "./packages/transport" },
     { "path": "./apps/figma-plugin" },
+    { "path": "./apps/cli" },
     {
       "path": "./packages/browser-extractor"
     },

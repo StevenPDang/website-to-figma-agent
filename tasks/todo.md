@@ -328,13 +328,13 @@
 
 **Acceptance criteria:**
 
-- [ ] The documented CLI command executes all stages in dependency order.
-- [ ] Success, partial, failure, timeout, and cancellation preserve the correct artifacts and diagnostics.
-- [ ] CLI defaults and limits match the approved specification.
+- [x] The documented CLI command executes all stages in dependency order.
+- [x] Success, partial, failure, timeout, and cancellation preserve the correct artifacts and diagnostics.
+- [x] CLI defaults and limits match the approved specification.
 
 **Verification:**
 
-- [ ] Run CLI unit tests and a mocked end-to-end pipeline test.
+- [x] Run CLI unit tests and a mocked end-to-end pipeline test.
 
 **Dependencies:** Tasks 7, 11, 12, and 14
 
