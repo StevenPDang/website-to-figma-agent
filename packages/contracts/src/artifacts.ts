@@ -37,6 +37,15 @@ export interface RawNodeObservation {
   parentSourceNodeId: string | null;
   childSourceNodeIds: string[];
   kind: 'element' | 'text' | 'pseudo-element' | 'shadow-root';
+  tagName?: string;
+  text?: string;
+  rect?: { x: number; y: number; width: number; height: number };
+  visible?: boolean;
+  clipped?: boolean;
+  zIndex?: string;
+  styles?: Record<string, string>;
+  pseudo?: 'before' | 'after';
+  coordinateSpace?: 'document';
 }
 
 export interface AssetReference {

@@ -104,13 +104,13 @@
 
 **Acceptance criteria:**
 
-- [ ] Mixed text runs, scrolled geometry, nested clipping, and pseudo-elements are represented correctly in fixtures.
-- [ ] Capture stops with structured diagnostics at the approved DOM and page-height limits.
-- [ ] Unsupported cross-origin frames and inaccessible content are classified rather than silently omitted.
+- [x] Mixed text runs, scrolled geometry, nested clipping, and pseudo-elements are represented correctly in fixtures.
+- [x] Capture stops with structured diagnostics at the approved DOM and page-height limits.
+- [x] Unsupported cross-origin frames and inaccessible content are classified rather than silently omitted.
 
 **Verification:**
 
-- [ ] Run extraction unit tests and the core-layout fixture integration test.
+- [x] Run extraction unit tests and the core-layout fixture integration test.
 
 **Dependencies:** Task 4
 

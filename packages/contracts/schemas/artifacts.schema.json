@@ -101,7 +101,31 @@
           "items": { "$ref": "#/$defs/stableId" },
           "uniqueItems": true
         },
-        "kind": { "enum": ["element", "text", "pseudo-element", "shadow-root"] }
+        "kind": {
+          "enum": ["element", "text", "pseudo-element", "shadow-root"]
+        },
+        "tagName": { "type": "string", "maxLength": 128 },
+        "text": { "type": "string", "maxLength": 100000 },
+        "rect": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "width": { "type": "number", "minimum": 0 },
+            "height": { "type": "number", "minimum": 0 }
+          },
+          "required": ["x", "y", "width", "height"]
+        },
+        "visible": { "type": "boolean" },
+        "clipped": { "type": "boolean" },
+        "zIndex": { "type": "string", "maxLength": 64 },
+        "styles": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "maxLength": 4096 }
+        },
+        "pseudo": { "enum": ["before", "after"] },
+        "coordinateSpace": { "const": "document" }
       },
       "required": [
         "sourceNodeId",
