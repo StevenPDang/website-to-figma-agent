@@ -78,19 +78,19 @@
 
 ## Phase B: Browser-to-IR Slice
 
-### Task 4: Establish the fixture harness and CDP session
+### Task 4: Establish the fixture harness and CDP session ✅
 
 **Description:** Add deterministic local fixture pages and a browser-session adapter that navigates, configures the viewport, waits for a stable capture point, and enforces public-URL and run limits.
 
 **Acceptance criteria:**
 
-- [ ] Tests launch the fixture site at an explicit viewport through the browser adapter.
-- [ ] Invalid/private URLs and exceeded time limits fail before artifact capture.
-- [ ] Session cleanup runs after success, failure, and cancellation.
+- [x] Tests launch the fixture site at an explicit viewport through the browser adapter.
+- [x] Invalid/private URLs and exceeded time limits fail before artifact capture.
+- [x] Session cleanup runs after success, failure, and cancellation.
 
 **Verification:**
 
-- [ ] Run browser-extractor integration tests against the local fixture server.
+- [x] Run browser-extractor integration tests against the local fixture server.
 
 **Dependencies:** Task 3
 

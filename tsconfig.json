@@ -2,6 +2,9 @@
   "files": [],
   "references": [
     {
+      "path": "./packages/browser-extractor"
+    },
+    {
       "path": "./packages/contracts"
     },
     {
