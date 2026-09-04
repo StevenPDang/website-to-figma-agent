@@ -1,0 +1,36 @@
+{
+  "name": "website-to-figma",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22 <27"
+  },
+  "packageManager": "npm@11.18.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "tsc --build",
+    "typecheck": "tsc --build --pretty false",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run --passWithNoTests tests/integration",
+    "test:e2e": "vitest run --passWithNoTests tests/e2e",
+    "validate:schemas": "vitest run --passWithNoTests packages/contracts",
+    "package:plugin": "npm run build --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@vitest/coverage-v8": "5.0.0",
+    "eslint": "10.10.0",
+    "prettier": "3.9.6",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.69.0",
+    "vitest": "5.0.0"
+  }
+}
