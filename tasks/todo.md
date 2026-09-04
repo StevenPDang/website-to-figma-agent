@@ -30,19 +30,19 @@
 
 **Estimated scope:** Medium (5 files plus generated package directories handled in focused follow-up commits if needed)
 
-### Task 2: Define artifact envelopes and schemas
+### Task 2: Define artifact envelopes and schemas ✅
 
 **Description:** Implement versioned schemas and TypeScript types for raw capture, Website IR, inference, Figma Scene, import results, QA reports, stable identifiers, and diagnostics.
 
 **Acceptance criteria:**
 
-- [ ] Each artifact requires the approved common metadata and stage-specific payload.
-- [ ] Valid examples parse into typed values; malformed versions and dangling identifiers fail clearly.
-- [ ] Browser facts, inference annotations, and Figma instructions cannot be confused structurally.
+- [x] Each artifact requires the approved common metadata and stage-specific payload.
+- [x] Valid examples parse into typed values; malformed versions and dangling identifiers fail clearly.
+- [x] Browser facts, inference annotations, and Figma instructions cannot be confused structurally.
 
 **Verification:**
 
-- [ ] Run `npm run validate:schemas` and contracts-package unit tests.
+- [x] Run `npm run validate:schemas` and contracts-package unit tests.
 
 **Dependencies:** Task 1
 

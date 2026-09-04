@@ -1,0 +1,517 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://website-to-figma.local/schemas/artifacts/1.0.0",
+  "title": "Website-to-Figma Artifact",
+  "oneOf": [
+    { "$ref": "#/$defs/rawCaptureArtifact" },
+    { "$ref": "#/$defs/websiteIrArtifact" },
+    { "$ref": "#/$defs/inferenceArtifact" },
+    { "$ref": "#/$defs/figmaSceneArtifact" },
+    { "$ref": "#/$defs/importResultArtifact" },
+    { "$ref": "#/$defs/qaReportArtifact" }
+  ],
+  "$defs": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": { "const": "1.0.0" },
+        "artifactKind": {
+          "enum": [
+            "raw-capture",
+            "website-ir",
+            "inference",
+            "figma-scene",
+            "import-result",
+            "qa-report"
+          ]
+        },
+        "runId": { "$ref": "#/$defs/stableId" },
+        "sourceUrl": { "type": "string", "format": "uri", "maxLength": 8192 },
+        "capturedAt": { "type": "string", "format": "date-time" },
+        "viewport": { "$ref": "#/$defs/viewport" },
+        "payload": { "type": "object" }
+      },
+      "required": [
+        "schemaVersion",
+        "artifactKind",
+        "runId",
+        "sourceUrl",
+        "capturedAt",
+        "viewport",
+        "payload"
+      ]
+    },
+    "stableId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*:.+$",
+      "maxLength": 512
+    },
+    "viewport": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "width": { "type": "number", "exclusiveMinimum": 0, "maximum": 100000 },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 100000
+        },
+        "deviceScaleFactor": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 10
+        }
+      },
+      "required": ["width", "height", "deviceScaleFactor"]
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "severity": { "enum": ["warning", "error"] },
+        "message": { "type": "string", "minLength": 1, "maxLength": 4096 },
+        "sourceNodeId": { "$ref": "#/$defs/stableId" }
+      },
+      "required": ["code", "severity", "message"]
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "assetId": { "$ref": "#/$defs/stableId" },
+        "sourceNodeId": { "$ref": "#/$defs/stableId" },
+        "kind": {
+          "enum": ["image", "svg", "font", "video", "canvas", "other"]
+        },
+        "contentHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      },
+      "required": ["assetId", "sourceNodeId", "kind"]
+    },
+    "rawNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sourceNodeId": { "$ref": "#/$defs/stableId" },
+        "parentSourceNodeId": {
+          "oneOf": [{ "$ref": "#/$defs/stableId" }, { "type": "null" }]
+        },
+        "childSourceNodeIds": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/stableId" },
+          "uniqueItems": true
+        },
+        "kind": { "enum": ["element", "text", "pseudo-element", "shadow-root"] }
+      },
+      "required": [
+        "sourceNodeId",
+        "parentSourceNodeId",
+        "childSourceNodeIds",
+        "kind"
+      ]
+    },
+    "websiteIrNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "nodeId": { "$ref": "#/$defs/stableId" },
+        "sourceNodeId": { "$ref": "#/$defs/stableId" },
+        "parentNodeId": {
+          "oneOf": [{ "$ref": "#/$defs/stableId" }, { "type": "null" }]
+        },
+        "childNodeIds": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/stableId" },
+          "uniqueItems": true
+        },
+        "kind": {
+          "enum": [
+            "frame",
+            "text",
+            "rectangle",
+            "ellipse",
+            "image",
+            "svg",
+            "group"
+          ]
+        }
+      },
+      "required": [
+        "nodeId",
+        "sourceNodeId",
+        "parentNodeId",
+        "childNodeIds",
+        "kind"
+      ]
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "decisionId": { "$ref": "#/$defs/stableId" },
+        "sourceNodeIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/stableId" },
+          "uniqueItems": true
+        },
+        "kind": { "enum": ["section", "layout", "component", "token"] },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1, "maxLength": 4096 }
+        },
+        "fallback": { "enum": ["geometry", "independent-nodes", "unsupported"] }
+      },
+      "required": [
+        "decisionId",
+        "sourceNodeIds",
+        "kind",
+        "confidence",
+        "evidence",
+        "fallback"
+      ]
+    },
+    "figmaSceneNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sceneNodeId": { "$ref": "#/$defs/stableId" },
+        "sourceNodeId": { "$ref": "#/$defs/stableId" },
+        "parentNodeId": {
+          "oneOf": [{ "$ref": "#/$defs/stableId" }, { "type": "null" }]
+        },
+        "childNodeIds": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/stableId" },
+          "uniqueItems": true
+        },
+        "kind": {
+          "enum": [
+            "frame",
+            "text",
+            "rectangle",
+            "ellipse",
+            "image",
+            "svg",
+            "vector",
+            "component",
+            "instance",
+            "group"
+          ]
+        },
+        "name": { "type": "string", "minLength": 1, "maxLength": 512 }
+      },
+      "required": [
+        "sceneNodeId",
+        "sourceNodeId",
+        "parentNodeId",
+        "childNodeIds",
+        "kind",
+        "name"
+      ]
+    },
+    "importedNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sceneNodeId": { "$ref": "#/$defs/stableId" },
+        "figmaNodeId": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "status": { "enum": ["created", "skipped", "failed"] }
+      },
+      "required": ["sceneNodeId", "status"]
+    },
+    "dimensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "width": { "type": "integer", "minimum": 1, "maximum": 100000 },
+        "height": { "type": "integer", "minimum": 1, "maximum": 100000 }
+      },
+      "required": ["width", "height"]
+    },
+    "discrepancyRegion": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sourceNodeId": { "$ref": "#/$defs/stableId" },
+        "x": { "type": "integer", "minimum": 0 },
+        "y": { "type": "integer", "minimum": 0 },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 }
+      },
+      "required": ["x", "y", "width", "height"]
+    },
+    "rawCaptureArtifact": {
+      "allOf": [
+        { "$ref": "#/$defs/metadata" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schemaVersion": { "const": "1.0.0" },
+            "artifactKind": { "const": "raw-capture" },
+            "runId": { "$ref": "#/$defs/stableId" },
+            "sourceUrl": {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 8192
+            },
+            "capturedAt": { "type": "string", "format": "date-time" },
+            "viewport": { "$ref": "#/$defs/viewport" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "rootNodeId": { "$ref": "#/$defs/stableId" },
+                "nodes": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/rawNode" }
+                },
+                "assets": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/asset" }
+                }
+              },
+              "required": ["rootNodeId", "nodes", "assets"]
+            }
+          }
+        }
+      ]
+    },
+    "websiteIrArtifact": {
+      "allOf": [
+        { "$ref": "#/$defs/metadata" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schemaVersion": { "const": "1.0.0" },
+            "artifactKind": { "const": "website-ir" },
+            "runId": { "$ref": "#/$defs/stableId" },
+            "sourceUrl": {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 8192
+            },
+            "capturedAt": { "type": "string", "format": "date-time" },
+            "viewport": { "$ref": "#/$defs/viewport" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "rootNodeId": { "$ref": "#/$defs/stableId" },
+                "sourceNodeIds": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/stableId" },
+                  "uniqueItems": true
+                },
+                "nodes": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/websiteIrNode" }
+                },
+                "assets": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/asset" }
+                }
+              },
+              "required": ["rootNodeId", "sourceNodeIds", "nodes", "assets"]
+            }
+          }
+        }
+      ]
+    },
+    "inferenceArtifact": {
+      "allOf": [
+        { "$ref": "#/$defs/metadata" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schemaVersion": { "const": "1.0.0" },
+            "artifactKind": { "const": "inference" },
+            "runId": { "$ref": "#/$defs/stableId" },
+            "sourceUrl": {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 8192
+            },
+            "capturedAt": { "type": "string", "format": "date-time" },
+            "viewport": { "$ref": "#/$defs/viewport" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "sourceNodeIds": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/stableId" },
+                  "uniqueItems": true
+                },
+                "decisions": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/decision" }
+                }
+              },
+              "required": ["sourceNodeIds", "decisions"]
+            }
+          }
+        }
+      ]
+    },
+    "figmaSceneArtifact": {
+      "allOf": [
+        { "$ref": "#/$defs/metadata" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schemaVersion": { "const": "1.0.0" },
+            "artifactKind": { "const": "figma-scene" },
+            "runId": { "$ref": "#/$defs/stableId" },
+            "sourceUrl": {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 8192
+            },
+            "capturedAt": { "type": "string", "format": "date-time" },
+            "viewport": { "$ref": "#/$defs/viewport" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "sourceNodeIds": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/stableId" },
+                  "uniqueItems": true
+                },
+                "rootNodeIds": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": { "$ref": "#/$defs/stableId" },
+                  "uniqueItems": true
+                },
+                "nodes": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/figmaSceneNode" }
+                },
+                "assets": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/asset" }
+                }
+              },
+              "required": ["sourceNodeIds", "rootNodeIds", "nodes", "assets"]
+            }
+          }
+        }
+      ]
+    },
+    "importResultArtifact": {
+      "allOf": [
+        { "$ref": "#/$defs/metadata" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schemaVersion": { "const": "1.0.0" },
+            "artifactKind": { "const": "import-result" },
+            "runId": { "$ref": "#/$defs/stableId" },
+            "sourceUrl": {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 8192
+            },
+            "capturedAt": { "type": "string", "format": "date-time" },
+            "viewport": { "$ref": "#/$defs/viewport" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "status": { "enum": ["success", "partial", "failed"] },
+                "sceneNodeIds": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/stableId" },
+                  "uniqueItems": true
+                },
+                "nodes": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/importedNode" }
+                },
+                "diagnostics": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/diagnostic" }
+                }
+              },
+              "required": ["status", "sceneNodeIds", "nodes", "diagnostics"]
+            }
+          }
+        }
+      ]
+    },
+    "qaReportArtifact": {
+      "allOf": [
+        { "$ref": "#/$defs/metadata" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schemaVersion": { "const": "1.0.0" },
+            "artifactKind": { "const": "qa-report" },
+            "runId": { "$ref": "#/$defs/stableId" },
+            "sourceUrl": {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 8192
+            },
+            "capturedAt": { "type": "string", "format": "date-time" },
+            "viewport": { "$ref": "#/$defs/viewport" },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "status": { "enum": ["pass", "partial", "fail"] },
+                "sourceNodeIds": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/stableId" },
+                  "uniqueItems": true
+                },
+                "reference": { "$ref": "#/$defs/dimensions" },
+                "candidate": { "$ref": "#/$defs/dimensions" },
+                "metrics": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "ssim": { "type": "number", "minimum": 0, "maximum": 1 },
+                    "changedPixelRatio": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    }
+                  },
+                  "required": ["ssim", "changedPixelRatio"]
+                },
+                "discrepancyRegions": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/discrepancyRegion" }
+                },
+                "diagnostics": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/diagnostic" }
+                }
+              },
+              "required": [
+                "status",
+                "sourceNodeIds",
+                "reference",
+                "candidate",
+                "metrics",
+                "discrepancyRegions",
+                "diagnostics"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}
