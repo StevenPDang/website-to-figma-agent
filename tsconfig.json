@@ -5,6 +5,7 @@
     { "path": "./packages/inference" },
     { "path": "./packages/figma-scene" },
     { "path": "./packages/transport" },
+    { "path": "./apps/figma-plugin" },
     {
       "path": "./packages/browser-extractor"
     },

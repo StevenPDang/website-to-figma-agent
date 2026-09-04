@@ -280,13 +280,13 @@
 
 **Acceptance criteria:**
 
-- [ ] Adapter tests verify core node properties and deterministic z-order.
-- [ ] Validation completes before document mutation begins.
-- [ ] Replayed acknowledged operations do not duplicate nodes.
+- [x] Adapter tests verify core node properties and deterministic z-order.
+- [x] Validation completes before document mutation begins.
+- [x] Replayed acknowledged operations do not duplicate nodes.
 
 **Verification:**
 
-- [ ] Run plugin importer contract tests using the Figma adapter harness.
+- [x] Run plugin importer contract tests using the Figma adapter harness.
 
 **Dependencies:** Task 12
 

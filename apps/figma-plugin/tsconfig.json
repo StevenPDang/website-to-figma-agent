@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "tsBuildInfoFile": "dist/figma-plugin.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts"]
+}
