@@ -128,6 +128,10 @@ export interface FigmaSceneNode {
   text?: string;
   styles?: Record<string, string>;
   layoutMode?: 'NONE' | 'HORIZONTAL' | 'VERTICAL';
+  fills?: string[];
+  opacity?: number;
+  cornerRadius?: number;
+  effects?: string[];
 }
 
 export type FigmaSceneArtifact = ArtifactEnvelope<

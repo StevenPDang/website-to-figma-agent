@@ -232,13 +232,13 @@
 
 **Acceptance criteria:**
 
-- [ ] Supported media and style fixtures map to valid scene instructions.
-- [ ] Unsupported CSS/SVG features are reported with source IDs and chosen fallbacks.
-- [ ] Asset dependencies are content-addressed and ordered before their consumers.
+- [x] Supported media and style fixtures map to valid scene instructions.
+- [x] Unsupported CSS/SVG features are reported with source IDs and chosen fallbacks.
+- [x] Asset dependencies are content-addressed and ordered before their consumers.
 
 **Verification:**
 
-- [ ] Run advanced mapping tests and validate the complete fixture scene.
+- [x] Run advanced mapping tests and validate the complete fixture scene.
 
 **Dependencies:** Task 10
 

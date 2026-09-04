@@ -263,7 +263,17 @@
           "type": "object",
           "additionalProperties": { "type": "string", "maxLength": 4096 }
         },
-        "layoutMode": { "enum": ["NONE", "HORIZONTAL", "VERTICAL"] }
+        "layoutMode": { "enum": ["NONE", "HORIZONTAL", "VERTICAL"] },
+        "fills": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 4096 }
+        },
+        "opacity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "cornerRadius": { "type": "number", "minimum": 0 },
+        "effects": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 4096 }
+        }
       },
       "required": [
         "sceneNodeId",
