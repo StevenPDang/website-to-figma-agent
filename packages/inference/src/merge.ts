@@ -43,13 +43,16 @@ export function mergeAgentInference(
       code: 'DUPLICATE_DECISION_ID',
       reason: 'Agent decision ID conflicts with a deterministic decision.',
     }));
-  const acceptedDecisions = policy.acceptedDecisions.filter(
+  const collisionFreeDecisions = policy.acceptedDecisions.filter(
     (decision) => !deterministicIds.has(decision.decisionId),
   );
+  const selection = selectAgentWinners(collisionFreeDecisions);
+  const acceptedDecisions = selection.winners;
   const rejectedDecisions = deduplicateRejections([
     ...parsed.rejectedDecisions,
     ...policy.rejectedDecisions,
     ...collisionRejections,
+    ...selection.rejections,
   ]);
   const acceptedKeys = new Map(
     acceptedDecisions.map((decision) => [conflictKey(decision), decision]),
@@ -57,7 +60,7 @@ export function mergeAgentInference(
   const rejectedKeys = new Set(
     policy.proposedDecisions
       .filter((decision) =>
-        policy.rejectedDecisions.some(
+        rejectedDecisions.some(
           (rejection) => rejection.decisionId === decision.decisionId,
         ),
       )
@@ -121,6 +124,39 @@ export function mergeAgentInference(
     );
   }
   return artifact;
+}
+
+function selectAgentWinners(decisions: AgenticInferenceDecision[]): {
+  winners: AgenticInferenceDecision[];
+  rejections: Array<{ decisionId: string; code: string; reason: string }>;
+} {
+  const winnersByKey = new Map<string, AgenticInferenceDecision>();
+  decisions.forEach((candidate) => {
+    const key = conflictKey(candidate);
+    const current = winnersByKey.get(key);
+    if (
+      current === undefined ||
+      candidate.confidence > current.confidence ||
+      (candidate.confidence === current.confidence &&
+        candidate.decisionId.localeCompare(current.decisionId) < 0)
+    ) {
+      winnersByKey.set(key, candidate);
+    }
+  });
+  const winnerIds = new Set(
+    [...winnersByKey.values()].map((decision) => decision.decisionId),
+  );
+  return {
+    winners: decisions.filter((decision) => winnerIds.has(decision.decisionId)),
+    rejections: decisions
+      .filter((decision) => !winnerIds.has(decision.decisionId))
+      .map((decision) => ({
+        decisionId: decision.decisionId,
+        code: 'AGENT_DECISION_CONFLICT',
+        reason:
+          'A higher-confidence agent decision targets the same property and source node.',
+      })),
+  };
 }
 
 function deduplicateRejections<T extends { decisionId: string }>(

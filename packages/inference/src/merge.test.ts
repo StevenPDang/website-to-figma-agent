@@ -132,4 +132,46 @@ describe('mergeAgentInference', () => {
       'INVALID_PROPOSAL_SCHEMA',
     );
   });
+
+  it('selects one agent winner per property by confidence', () => {
+    const result = mergeAgentInference(
+      ir,
+      deterministic,
+      {
+        decisions: [
+          {
+            decisionId: 'decision:name-low',
+            sourceNodeIds: ['source:text'],
+            kind: 'semantic-name',
+            confidence: 0.6,
+            evidence: ['possible label'],
+            fallback: 'geometry',
+            origin: 'agent',
+            payload: { name: 'Label' },
+          },
+          {
+            decisionId: 'decision:name-high',
+            sourceNodeIds: ['source:text'],
+            kind: 'semantic-name',
+            confidence: 0.9,
+            evidence: ['visible heading'],
+            fallback: 'geometry',
+            origin: 'agent',
+            payload: { name: 'Heading' },
+          },
+        ],
+      },
+      { maxDecisions: 5 },
+    );
+
+    const decisionIds = result.payload.decisions.map((item) => item.decisionId);
+    expect(decisionIds).toContain('decision:name-high');
+    expect(decisionIds).not.toContain('decision:name-low');
+    expect(result.payload.rejectedDecisions).toContainEqual(
+      expect.objectContaining({
+        decisionId: 'decision:name-low',
+        code: 'AGENT_DECISION_CONFLICT',
+      }),
+    );
+  });
 });
