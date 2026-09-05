@@ -25,6 +25,15 @@ const captureInPage = (maxNodes: number) => {
     'font-family',
     'font-size',
     'font-weight',
+    'font-style',
+    'white-space',
+    'text-align',
+    'text-transform',
+    'text-decoration-line',
+    'background-image',
+    'object-fit',
+    'border-top-color',
+    'border-top-style',
     'line-height',
     'letter-spacing',
     'margin-top',
@@ -72,6 +81,17 @@ const captureInPage = (maxNodes: number) => {
     element: Element,
     rect: { width: number; height: number },
   ) => {
+    let ancestor: Element | null = element;
+    while (ancestor) {
+      const computed = getComputedStyle(ancestor);
+      if (
+        computed.display === 'none' ||
+        computed.visibility === 'hidden' ||
+        computed.opacity === '0'
+      )
+        return false;
+      ancestor = ancestor.parentElement;
+    }
     const style = getComputedStyle(element);
     return (
       style.display !== 'none' &&
@@ -121,7 +141,18 @@ const captureInPage = (maxNodes: number) => {
     if (node.nodeType === Node.TEXT_NODE) {
       const text = node.textContent ?? '';
       if (!text.trim()) return;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const box = range.getBoundingClientRect();
       add({
+        rect: {
+          x: box.x + window.scrollX,
+          y: box.y + window.scrollY,
+          width: box.width,
+          height: box.height,
+        },
+        visible: !!node.parentElement && visibleOf(node.parentElement, box),
+        coordinateSpace: 'document',
         sourceNodeId: idFor(path),
         parentSourceNodeId,
         childSourceNodeIds: [],
@@ -133,6 +164,12 @@ const captureInPage = (maxNodes: number) => {
     }
     if (node.nodeType !== Node.ELEMENT_NODE) return;
     const element = node as Element;
+    if (
+      ['HEAD', 'SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE'].includes(
+        element.tagName,
+      )
+    )
+      return;
     const sourceNodeId = idFor(path);
     const rect = rectOf(element);
     const childSourceNodeIds: string[] = [];
@@ -150,6 +187,13 @@ const captureInPage = (maxNodes: number) => {
       coordinateSpace: 'document',
     };
     if (!add(observation)) return;
+    if (['CANVAS', 'VIDEO', 'IFRAME'].includes(element.tagName))
+      diagnostics.push({
+        code: 'UNSUPPORTED_MEDIA',
+        severity: 'warning',
+        sourceNodeId,
+        message: 'Canvas, video, and embedded documents are not reconstructed.',
+      });
     const before = getComputedStyle(element, '::before');
     const after = getComputedStyle(element, '::after');
     for (const [pseudo, style] of [
@@ -177,9 +221,7 @@ const captureInPage = (maxNodes: number) => {
     }
     if (element.shadowRoot) {
       const shadowId = idFor(`${path}:shadow`);
-      const shadowChildren = Array.from(element.shadowRoot.childNodes).map(
-        (_, i) => idFor(`${path}:shadow.${i}`),
-      );
+      const shadowChildren: string[] = [];
       if (
         add({
           sourceNodeId: shadowId,
@@ -190,7 +232,10 @@ const captureInPage = (maxNodes: number) => {
       )
         childSourceNodeIds.push(shadowId);
       Array.from(element.shadowRoot.childNodes).forEach((child, i) => {
+        const beforeCount = nodes.length;
         walk(child, `${path}:shadow.${i}`, shadowId);
+        const captured = nodes[beforeCount];
+        if (captured) shadowChildren.push(captured.sourceNodeId);
       });
     }
     Array.from(element.childNodes).forEach((child, i) => {

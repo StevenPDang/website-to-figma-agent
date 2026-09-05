@@ -13,6 +13,8 @@
     "@website-to-figma/contracts": "0.0.0",
     "@website-to-figma/website-ir": "0.0.0",
     "@website-to-figma/inference": "0.0.0",
-    "@website-to-figma/figma-scene": "0.0.0"
+    "@website-to-figma/figma-scene": "0.0.0",
+    "@website-to-figma/transport": "0.0.0",
+    "@website-to-figma/visual-qa": "0.0.0"
   }
 }

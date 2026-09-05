@@ -8,3 +8,6 @@ artifacts/
 !.env.example
 *.pem
 .DS_Store
+
+.artifacts/
+.tmp-pipeline-test/

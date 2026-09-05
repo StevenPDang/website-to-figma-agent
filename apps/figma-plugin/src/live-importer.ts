@@ -1,0 +1,368 @@
+import {
+  parseLiveMessage,
+  type ImportRequest,
+  type ImportResponse,
+  type Diagnostic,
+  type ImportedNodeResult,
+} from '@website-to-figma/contracts';
+
+export function solidPaint(css: string | undefined): SolidPaint | undefined {
+  if (!css) return;
+  const m = css.match(
+    /^rgba?\(\s*([\d.]+)[, ]+([\d.]+)[, ]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?\s*\)$/,
+  );
+  if (!m) return;
+  return {
+    type: 'SOLID',
+    color: {
+      r: Number(m[1]) / 255,
+      g: Number(m[2]) / 255,
+      b: Number(m[3]) / 255,
+    },
+    opacity: m[4] === undefined ? 1 : Number(m[4]),
+  };
+}
+const number = (value: string | undefined, fallback = 0) => {
+  const n = Number.parseFloat(value ?? '');
+  return Number.isFinite(n) ? n : fallback;
+};
+
+export async function importLiveScene(
+  api: PluginAPI,
+  request: ImportRequest,
+  bytesByHash: Map<string, Uint8Array>,
+): Promise<ImportResponse> {
+  parseLiveMessage(request);
+  if (
+    api.currentPage.id !== request.destination.pageId ||
+    api.root.name !== request.destination.documentName
+  )
+    throw new Error('Destination changed before import');
+  const { scene } = request;
+  const diagnostics: Diagnostic[] = [];
+  const results: ImportedNodeResult[] = [];
+  const sources = new Map(scene.payload.nodes.map((n) => [n.sceneNodeId, n]));
+  const created = new Map<string, SceneNode>();
+  const assets = new Map(scene.payload.assets.map((a) => [a.sourceNodeId, a]));
+  const available = await api.listAvailableFontsAsync();
+  const loaded = new Set<string>();
+  const wrapper = api.createFrame();
+  wrapper.name = `${scene.sourceUrl} — ${scene.viewport.width}px`;
+  wrapper.resize(request.width, request.height);
+  wrapper.clipsContent = true;
+  wrapper.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1 } }];
+  wrapper.setPluginData('runId', scene.runId);
+  const queue = [...scene.payload.rootNodeIds];
+  for (let i = 0; i < queue.length; i++) {
+    const id = queue[i];
+    const source = id ? sources.get(id) : undefined;
+    if (!source) continue;
+    queue.push(...source.childNodeIds);
+    const styles = source.styles ?? {};
+    const warn = (code: string, message: string) =>
+      diagnostics.push({
+        code,
+        message,
+        severity: 'warning',
+        sourceNodeId: source.sourceNodeId,
+      });
+    // SVG descendants are represented by the imported vector hierarchy.
+    let ancestor = source.parentNodeId;
+    let insideSvg = false;
+    while (ancestor) {
+      const p = sources.get(ancestor);
+      if (p?.kind === 'svg') insideSvg = true;
+      ancestor = p?.parentNodeId ?? null;
+    }
+    if (insideSvg) {
+      results.push({ sceneNodeId: source.sceneNodeId, status: 'skipped' });
+      warn(
+        'SVG_DESCENDANT',
+        'Represented by the enclosing editable SVG vector hierarchy.',
+      );
+      continue;
+    }
+    let node: SceneNode | undefined;
+    try {
+      const rect = source.rect;
+      if (!rect || rect.width <= 0 || rect.height <= 0) {
+        results.push({ sceneNodeId: source.sceneNodeId, status: 'skipped' });
+        warn('NO_VISIBLE_GEOMETRY', 'Source has no rendered geometry.');
+        continue;
+      }
+      if (source.kind === 'text') {
+        const family =
+          (styles['font-family'] ?? 'Inter')
+            .split(',')[0]
+            ?.trim()
+            .replace(/["']/g, '') ?? 'Inter';
+        const weight = number(styles['font-weight'], 400);
+        const desired =
+          weight >= 700
+            ? 'Bold'
+            : weight >= 600
+              ? 'Semi Bold'
+              : weight >= 500
+                ? 'Medium'
+                : 'Regular';
+        let font = available.find(
+          (f) => f.fontName.family === family && f.fontName.style === desired,
+        )?.fontName;
+        font ??= available.find((f) => f.fontName.family === family)?.fontName;
+        if (!font) {
+          font = { family: 'Inter', style: 'Regular' };
+          warn(
+            'FONT_SUBSTITUTED',
+            `${family} ${desired} unavailable; using Inter Regular.`,
+          );
+        } else if (font.style !== desired)
+          warn(
+            'FONT_STYLE_SUBSTITUTED',
+            `${family} ${desired} unavailable; using ${font.style}.`,
+          );
+        const key = JSON.stringify(font);
+        if (!loaded.has(key)) {
+          await api.loadFontAsync(font);
+          loaded.add(key);
+        }
+        const text = api.createText();
+        node = text;
+        text.fontName = font;
+        text.fontSize = Math.max(1, number(styles['font-size'], 16));
+        let characters = source.text ?? '';
+        if (
+          !['pre', 'pre-wrap', 'break-spaces'].includes(
+            styles['white-space'] ?? '',
+          )
+        )
+          characters = characters.replace(/\s+/g, ' ');
+        if (styles['text-transform'] === 'uppercase')
+          characters = characters.toUpperCase();
+        if (styles['text-transform'] === 'lowercase')
+          characters = characters.toLowerCase();
+        text.characters = characters;
+        text.textAutoResize = 'NONE';
+        text.fills = solidPaint(styles.color)
+          ? [solidPaint(styles.color) as SolidPaint]
+          : [];
+        if (
+          styles['line-height'] !== 'normal' &&
+          number(styles['line-height']) > 0
+        )
+          text.lineHeight = {
+            unit: 'PIXELS',
+            value: number(styles['line-height']),
+          };
+        text.letterSpacing = {
+          unit: 'PIXELS',
+          value: number(styles['letter-spacing']),
+        };
+        if (styles['text-align'] === 'center')
+          text.textAlignHorizontal = 'CENTER';
+        if (styles['text-align'] === 'right')
+          text.textAlignHorizontal = 'RIGHT';
+        if (styles['text-decoration-line']?.includes('underline'))
+          text.textDecoration = 'UNDERLINE';
+      } else if (source.kind === 'svg') {
+        const asset = assets.get(source.sourceNodeId);
+        const bytes = asset?.contentHash
+          ? bytesByHash.get(asset.contentHash)
+          : undefined;
+        if (!bytes) throw new Error('SVG asset missing');
+        // UTF-8 decoding is done in the UI; convert bytes without Node globals.
+        const markup = decodeUtf8(bytes);
+        if (
+          /<\s*(script|foreignObject)|\bon\w+\s*=|(?:href|src)\s*=\s*["']\s*(?:https?:|\/\/|javascript:)/i.test(
+            markup,
+          )
+        )
+          throw new Error(
+            'SVG contains unsupported active or external content',
+          );
+        node = api.createNodeFromSvg(markup);
+      } else if (source.kind === 'ellipse') node = api.createEllipse();
+      else if (source.kind === 'image') {
+        const rectangle = api.createRectangle();
+        node = rectangle;
+        const asset = assets.get(source.sourceNodeId);
+        const bytes = asset?.contentHash
+          ? bytesByHash.get(asset.contentHash)
+          : undefined;
+        if (!bytes) throw new Error('Image asset missing');
+        rectangle.fills = [
+          {
+            type: 'IMAGE',
+            imageHash: api.createImage(bytes).hash,
+            scaleMode: styles['object-fit'] === 'contain' ? 'FIT' : 'FILL',
+          },
+        ];
+      } else {
+        const frame = api.createFrame();
+        node = frame;
+        frame.clipsContent = ['hidden', 'clip', 'scroll', 'auto'].includes(
+          styles.overflow ?? '',
+        );
+        frame.fills = [];
+      }
+      node.name = source.name;
+      node.setPluginData('sourceNodeId', source.sourceNodeId);
+      node.setPluginData('sceneNodeId', source.sceneNodeId);
+      let parent = source.parentNodeId
+        ? created.get(source.parentNodeId)
+        : undefined;
+      if (!parent || !('appendChild' in parent)) parent = wrapper;
+      (parent as FrameNode).appendChild(node);
+      const parentSource = source.parentNodeId
+        ? sources.get(source.parentNodeId)
+        : undefined;
+      node.resize(Math.max(0.01, rect.width), Math.max(0.01, rect.height));
+      node.x = rect.x - (parent === wrapper ? 0 : (parentSource?.rect?.x ?? 0));
+      node.y = rect.y - (parent === wrapper ? 0 : (parentSource?.rect?.y ?? 0));
+      if (
+        source.kind !== 'text' &&
+        source.kind !== 'image' &&
+        source.kind !== 'svg' &&
+        'fills' in node
+      ) {
+        const fill = solidPaint(styles['background-color']);
+        node.fills = fill ? [fill] : [];
+      }
+      if (source.kind !== 'text' && 'opacity' in node)
+        node.opacity = Math.max(0, Math.min(1, source.opacity ?? 1));
+      if ('cornerRadius' in node && source.cornerRadius !== undefined)
+        node.cornerRadius = Math.max(0, source.cornerRadius);
+      if ('strokes' in node && number(styles['border-top-width']) > 0) {
+        const stroke = solidPaint(styles['border-top-color']);
+        if (stroke) {
+          node.strokes = [stroke];
+          node.strokeWeight = number(styles['border-top-width']);
+          node.strokeAlign = 'INSIDE';
+        }
+      }
+      if (styles['background-image'] && styles['background-image'] !== 'none')
+        warn(
+          'BACKGROUND_UNSUPPORTED',
+          'CSS background images/gradients require additional mapping.',
+        );
+      if (styles.transform && styles.transform !== 'none')
+        warn(
+          'TRANSFORM_GEOMETRY_FALLBACK',
+          'Transform represented by its rendered bounding box.',
+        );
+      if (source.effects?.length)
+        warn('SHADOW_UNSUPPORTED', 'CSS shadow was not mapped.');
+      if (source.kind === 'text' && styles['font-style'] === 'italic')
+        warn(
+          'FONT_STYLE_UNSUPPORTED',
+          'Italic style requires an available matching face.',
+        );
+      created.set(source.sceneNodeId, node);
+      results.push({
+        sceneNodeId: source.sceneNodeId,
+        figmaNodeId: node.id,
+        status: 'created',
+      });
+    } catch (error) {
+      node?.remove();
+      diagnostics.push({
+        code: 'NODE_IMPORT_FAILED',
+        severity: 'error',
+        sourceNodeId: source.sourceNodeId,
+        message: error instanceof Error ? error.message : 'Node import failed',
+      });
+      results.push({ sceneNodeId: source.sceneNodeId, status: 'failed' });
+    }
+  }
+  // Geometry remains authoritative; Auto Layout is enabled only when children align with it.
+  for (const source of scene.payload.nodes) {
+    const frame = created.get(source.sceneNodeId);
+    if (
+      frame?.type !== 'FRAME' ||
+      !source.layoutMode ||
+      source.layoutMode === 'NONE'
+    )
+      continue;
+    const children = frame.children;
+    const horizontal = source.layoutMode === 'HORIZONTAL';
+    const style = source.styles ?? {};
+    const mainStart = number(
+      style[horizontal ? 'padding-left' : 'padding-top'],
+    );
+    const crossStart = number(
+      style[horizontal ? 'padding-top' : 'padding-left'],
+    );
+    const gap = number(style.gap);
+    let cursor = mainStart;
+    const aligned =
+      children.length > 0 &&
+      children.every((child) => {
+        const fits =
+          Math.abs((horizontal ? child.x : child.y) - cursor) < 1 &&
+          Math.abs((horizontal ? child.y : child.x) - crossStart) < 1;
+        cursor += (horizontal ? child.width : child.height) + gap;
+        return fits;
+      });
+    if (aligned) {
+      frame.layoutMode = source.layoutMode;
+      frame.primaryAxisSizingMode = 'FIXED';
+      frame.counterAxisSizingMode = 'FIXED';
+      frame.paddingLeft = number(style['padding-left']);
+      frame.paddingRight = number(style['padding-right']);
+      frame.paddingTop = number(style['padding-top']);
+      frame.paddingBottom = number(style['padding-bottom']);
+      frame.itemSpacing = gap;
+    } else
+      diagnostics.push({
+        code: 'LAYOUT_GEOMETRY_FALLBACK',
+        severity: 'warning',
+        sourceNodeId: source.sourceNodeId,
+        message:
+          'Auto Layout would change observed positions; preserved editable geometry.',
+      });
+  }
+  api.currentPage.selection = [wrapper];
+  api.viewport.scrollAndZoomIntoView([wrapper]);
+  let png = '';
+  try {
+    png = api.base64Encode(
+      await wrapper.exportAsync({
+        format: 'PNG',
+        constraint: { type: 'SCALE', value: 1 },
+        useAbsoluteBounds: true,
+      }),
+    );
+  } catch {
+    diagnostics.push({
+      code: 'EXPORT_FAILED',
+      severity: 'error',
+      message: 'Figma PNG export failed.',
+    });
+  }
+  return {
+    protocolVersion: request.protocolVersion,
+    runId: request.runId,
+    type: 'import-result',
+    destination: request.destination,
+    png,
+    result: {
+      schemaVersion: scene.schemaVersion,
+      artifactKind: 'import-result',
+      runId: scene.runId,
+      sourceUrl: scene.sourceUrl,
+      capturedAt: scene.capturedAt,
+      viewport: scene.viewport,
+      payload: {
+        status: diagnostics.length ? 'partial' : 'success',
+        sceneNodeIds: scene.payload.nodes.map((n) => n.sceneNodeId),
+        nodes: results,
+        diagnostics,
+      },
+    },
+  };
+}
+function decodeUtf8(bytes: Uint8Array) {
+  // Figma's sandbox has no TextDecoder.
+  let escaped = '';
+  for (const byte of bytes) escaped += `%${byte.toString(16).padStart(2, '0')}`;
+  return decodeURIComponent(escaped);
+}

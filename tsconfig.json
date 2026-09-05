@@ -1,13 +1,27 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/website-ir" },
-    { "path": "./packages/inference" },
-    { "path": "./packages/figma-scene" },
-    { "path": "./packages/transport" },
-    { "path": "./apps/figma-plugin" },
-    { "path": "./apps/cli" },
-    { "path": "./packages/visual-qa" },
+    {
+      "path": "./packages/website-ir"
+    },
+    {
+      "path": "./packages/inference"
+    },
+    {
+      "path": "./packages/figma-scene"
+    },
+    {
+      "path": "./packages/transport"
+    },
+    {
+      "path": "./apps/figma-plugin"
+    },
+    {
+      "path": "./apps/cli"
+    },
+    {
+      "path": "./packages/visual-qa"
+    },
     {
       "path": "./packages/browser-extractor"
     },
@@ -16,6 +30,9 @@
     },
     {
       "path": "./packages/workspace-smoke"
+    },
+    {
+      "path": "./tests"
     }
   ]
 }

@@ -52,6 +52,17 @@ export async function openBrowserSession(
       timeout: options.timeoutMs ?? 10_000,
       waitUntil: 'domcontentloaded',
     });
+    await page.evaluate(async () => {
+      await Promise.race([
+        Promise.all([
+          document.fonts.ready,
+          ...Array.from(document.images).map((image) =>
+            image.decode().catch(() => {}),
+          ),
+        ]),
+        new Promise((resolve) => setTimeout(resolve, 5000)),
+      ]);
+    });
     const metrics = await page.evaluate(() => ({
       width: Math.max(
         document.documentElement.scrollWidth,

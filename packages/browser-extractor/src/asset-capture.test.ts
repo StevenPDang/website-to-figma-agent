@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { startFixtureServer } from './fixture-server.js';
 import { openBrowserSession } from './session.js';
+import { captureDom } from './dom-capture.js';
 import { captureAssets } from './asset-capture.js';
 import { captureScreenshot } from './screenshot.js';
 
@@ -21,7 +22,15 @@ describe('asset capture', () => {
       expect(screenshot.width).toBe(800);
       expect(screenshot.height).toBeGreaterThanOrEqual(600);
       expect(screenshot.bytes.byteLength).toBeGreaterThan(0);
+      const dom = await captureDom(session.page);
       const result = await captureAssets(session.page);
+      for (const asset of result.assets) {
+        expect(
+          dom.nodes.find((node) => node.sourceNodeId === asset.sourceNodeId)
+            ?.tagName,
+        ).toBe(asset.kind === 'svg' ? 'svg' : 'img');
+      }
+      expect(new Set(result.assets.map((asset) => asset.assetId)).size).toBe(3);
       expect(result.assets).toHaveLength(3);
       expect(result.assets[0]?.contentHash).toBe(result.assets[1]?.contentHash);
       expect(

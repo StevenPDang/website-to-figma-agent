@@ -3,7 +3,14 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": ".",
-    "tsBuildInfoFile": "dist/figma-plugin.tsbuildinfo"
+    "tsBuildInfoFile": "dist/figma-plugin.tsbuildinfo",
+    "types": ["@figma/plugin-typings", "node"],
+    "skipLibCheck": true
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "references": [
+    {
+      "path": "../../packages/contracts"
+    }
+  ]
 }

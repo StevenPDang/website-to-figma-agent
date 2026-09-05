@@ -26,8 +26,11 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@figma/plugin-typings": "1.117.0",
     "@types/node": "22.20.1",
+    "@types/pngjs": "6.0.5",
     "@vitest/coverage-v8": "5.0.0",
+    "esbuild": "0.28.2",
     "eslint": "10.10.0",
     "prettier": "3.9.6",
     "typescript": "5.9.3",

@@ -2,7 +2,7 @@
 
 ## Status
 
-Phase 1 approved on 2026-09-04. Implementation planning may proceed; implementation remains gated on plan/task approval.
+Implementation and live integration approved on 2026-09-04. Protocol 1.1.0 and pinned bundling/PNG dependencies approved by the user.
 
 ## Assumptions
 
@@ -215,3 +215,28 @@ The MVP is complete when all of the following are demonstrated on the approved f
 ## Open Questions
 
 None for MVP planning. New questions discovered during implementation must update this specification before changing scope or architecture.
+
+## Approved Live Integration
+
+Protocol 1.1.0 uses authenticated loopback WebSockets (CLI port 3847, explicitly
+allowlisted in the development plugin manifest) with a bounded complete-scene
+request, content-addressed base64 assets, a destination acknowledgement, and a
+structured result plus PNG export. Protocol 1.0.0 remains available for legacy
+contract tests but is rejected by the live importer. A plugin instance caches each
+run request and result, including in-flight work, for bounded reconnect retries.
+Closing/restarting the plugin requires a new CLI run; it never automatically
+replays an interrupted import into a new plugin instance.
+
+The CLI defaults to live import; `--capture-only` explicitly prepares artifacts
+without connecting. It prints a short-lived connection descriptor for pasting into
+the plugin; no token is persisted. Plugin results and PNGs are checked against the
+run identity and exact scene membership. Captured full-page dimensions define the
+export frame. Missing plugins, substitutions, unsupported features, and QA failure
+produce a non-success exit status with retained artifacts.
+
+Use pinned esbuild for an IIFE plugin bundle, official Figma TypeScript declarations
+for runtime API checking, and pngjs for PNG decoding. JSON Schema validators used
+inside Figma are generated at build time; the plugin does not compile code at runtime.
+Pixel QA composites transparency on white, uses 8×8 luminance SSIM windows and the
+approved channel tolerance and thresholds. Real Figma visual acceptance remains a
+manual release gate, separate from the automated runtime harness.

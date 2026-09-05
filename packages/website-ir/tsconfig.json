@@ -5,5 +5,10 @@
     "rootDir": ".",
     "tsBuildInfoFile": "dist/website-ir.tsbuildinfo"
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "references": [
+    {
+      "path": "../../packages/contracts"
+    }
+  ]
 }

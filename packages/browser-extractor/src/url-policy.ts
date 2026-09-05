@@ -22,7 +22,7 @@ export function assertNavigableUrl(
     throw new Error('URLs containing credentials are not allowed');
   }
 
-  const hostname = url.hostname.toLowerCase();
+  const hostname = url.hostname.toLowerCase().replace(/^\[|\]$/g, '');
   if (!options.allowLoopback && isPrivateHost(hostname)) {
     throw new Error('Private and loopback hosts are not allowed');
   }

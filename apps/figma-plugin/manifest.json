@@ -2,8 +2,11 @@
   "name": "Website to Figma Importer",
   "id": "website-to-figma-importer",
   "api": "1.0.0",
-  "main": "dist/src/index.js",
+  "main": "dist/plugin/code.js",
   "editorType": ["figma"],
   "documentAccess": "dynamic-page",
-  "networkAccess": { "allowedDomains": ["http://127.0.0.1"] }
+  "networkAccess": {
+    "allowedDomains": ["none"],
+    "devAllowedDomains": ["ws://127.0.0.1:3847"]
+  }
 }

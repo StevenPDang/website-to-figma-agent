@@ -1,3 +1,5 @@
+import { decodePng } from './png.js';
+import { comparePixels } from './pixels.js';
 import type { QaReportArtifact } from '@website-to-figma/contracts';
 
 export interface ImageInput {
@@ -20,12 +22,20 @@ export function compareImages(
   const sameDimensions =
     reference.width === candidate.width &&
     reference.height === candidate.height;
-  const identical =
-    sameDimensions &&
-    reference.bytes.length === candidate.bytes.length &&
-    reference.bytes.every((byte, index) => byte === candidate.bytes[index]);
-  const ssim = identical ? 1 : 0;
-  const changedPixelRatio = identical ? 0 : 1;
+  const decodedReference = decodePng(reference.bytes);
+  const decodedCandidate = decodePng(candidate.bytes);
+  if (
+    decodedReference.width !== reference.width ||
+    decodedReference.height !== reference.height ||
+    decodedCandidate.width !== candidate.width ||
+    decodedCandidate.height !== candidate.height
+  )
+    throw new Error('PNG dimensions do not match declared dimensions');
+  const { ssim, changedPixelRatio } = comparePixels(
+    decodedReference,
+    decodedCandidate,
+  );
+  const identical = ssim === 1 && changedPixelRatio === 0;
   const threshold = options.threshold ?? 0.95;
   const diagnostics = sameDimensions
     ? []
@@ -48,7 +58,12 @@ export function compareImages(
       deviceScaleFactor: 1,
     },
     payload: {
-      status: sameDimensions && ssim >= threshold ? 'pass' : 'fail',
+      status:
+        sameDimensions &&
+        ssim >= Math.max(0.95, threshold) &&
+        changedPixelRatio <= 0.05
+          ? 'pass'
+          : 'fail',
       sourceNodeIds: [],
       reference: { width: reference.width, height: reference.height },
       candidate: { width: candidate.width, height: candidate.height },

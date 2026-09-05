@@ -19,6 +19,29 @@ The source website is the visual source of truth. Preserve both browser facts an
 
 Default to `single` mode with one 1440px-wide desktop viewport when the user supplies no mode. Do not silently expand a run to other pages, viewports, or interaction states.
 
+## Run the Implemented CLI
+
+From the repository root, run `npm run build` and `npm run package:plugin`.
+Have the user load `apps/figma-plugin/dist/plugin/manifest.json` as a Figma Desktop
+development plugin in the intended destination page. Run:
+
+```sh
+node apps/cli/dist/src/index.js import <source-url>
+```
+
+The CLI prints a short-lived connection JSON object. The user pastes it into the
+plugin and selects **Connect and import into this page**, confirming the displayed
+destination. Never persist the token. Default mode is `single`, 1440×900, full
+page height. Other modes are not yet supported; do not simulate their completion.
+
+Use `--capture-only` only when preparing artifacts without Figma. It returns a
+partial status and exit code 2 by design. Live import also returns 2 for missing
+plugins, unsupported features, font substitutions, or failed visual QA. Exit 0
+requires a successful import and a measured QA pass. Read
+`docs/getting-started.md` and `docs/limitations.md` for setup and supported mappings.
+Do not describe a successful capture or a synthetic test peer as a finished Figma
+conversion. A live Figma smoke test remains necessary for visual acceptance.
+
 ## Pipeline Contract
 
 Execute these stages in order:

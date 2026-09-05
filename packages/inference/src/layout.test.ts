@@ -49,3 +49,22 @@ describe('inferLayout', () => {
     );
   });
 });
+
+it.each(['grid', 'inline-grid', 'inline-flex', 'block', ''])(
+  'preserves evidence and fallback for %s containers',
+  (display) => {
+    const input = structuredClone(ir);
+    const root = input.payload.nodes[0];
+    if (!root) throw new Error('fixture');
+    root.styles = { display };
+    const layout = inferLayout(input).payload.decisions.find(
+      (d) => d.kind === 'layout',
+    );
+    expect(layout?.fallback).toBe(
+      ['grid', 'inline-grid', 'inline-flex'].includes(display)
+        ? 'independent-nodes'
+        : 'geometry',
+    );
+    expect(layout?.evidence).toContain(`display=${display || 'unknown'}`);
+  },
+);

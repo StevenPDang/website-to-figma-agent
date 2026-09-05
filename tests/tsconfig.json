@@ -1,0 +1,24 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/tests.tsbuildinfo"
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["dist"],
+  "references": [
+    {
+      "path": "../apps/cli"
+    },
+    {
+      "path": "../packages/contracts"
+    },
+    {
+      "path": "../packages/browser-extractor"
+    },
+    {
+      "path": "../packages/transport"
+    }
+  ]
+}

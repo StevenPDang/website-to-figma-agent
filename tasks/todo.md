@@ -390,3 +390,16 @@
 - [ ] Figma Desktop smoke test is recorded (blocked; see `docs/smoke-test.md`).
 - [x] Known limitations and partial-result behavior are documented.
 - [ ] Human reviews the completed MVP.
+
+## Live integration follow-up (user approved)
+
+- [x] Correct asset/source identities; persist bytes and reference PNG.
+- [x] Validate artifacts and stop reporting capture-only as success.
+- [x] Add protocol 1.1.0 authenticated requests/results and bounded reconnects.
+- [x] Package a real Figma controller/UI with build-time schema validators.
+- [x] Create editable layers and return source-linked import results and PNG.
+- [x] Decode PNGs and calculate pixel SSIM/changed-pixel QA.
+- [x] Exercise the packaged controller, browser UI, transport, and CLI integration.
+- [x] Document plugin setup and update the domain skill's executable workflow.
+- [ ] Real Figma Desktop smoke test and approved visual acceptance thresholds.
+- [ ] Remaining advanced CSS/component mappings listed in docs/limitations.md.

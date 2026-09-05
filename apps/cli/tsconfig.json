@@ -5,5 +5,28 @@
     "rootDir": ".",
     "tsBuildInfoFile": "dist/cli.tsbuildinfo"
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "references": [
+    {
+      "path": "../../packages/browser-extractor"
+    },
+    {
+      "path": "../../packages/contracts"
+    },
+    {
+      "path": "../../packages/website-ir"
+    },
+    {
+      "path": "../../packages/inference"
+    },
+    {
+      "path": "../../packages/figma-scene"
+    },
+    {
+      "path": "../../packages/transport"
+    },
+    {
+      "path": "../../packages/visual-qa"
+    }
+  ]
 }
