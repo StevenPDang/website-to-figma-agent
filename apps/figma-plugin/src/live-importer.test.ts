@@ -133,6 +133,21 @@ it('creates editable text with parent-relative geometry and source identity', as
   expect(text?.data.get('sourceNodeId')).toBe('dom:1');
 });
 
+it('removes collapsed boundary whitespace from editable browser text', async () => {
+  const { api, nodes } = harness();
+  const spaced = structuredClone(request);
+  const source = spaced.scene.payload.nodes.find(
+    (node) => node.kind === 'text',
+  );
+  if (!source) throw new Error('Missing text fixture');
+  source.text = '\n\n  Featured work\n\n';
+  source.styles = { ...source.styles, 'white-space': 'normal' };
+  await importLiveScene(api as unknown as PluginAPI, spaced, new Map());
+  expect(nodes.find((node) => node.type === 'TEXT')?.characters).toBe(
+    'Featured work',
+  );
+});
+
 it('maps CSS gradients and shadows to Figma paints and effects', () => {
   const gradient = gradientPaint(
     'linear-gradient(90deg, rgb(0, 0, 0), rgba(255, 255, 255, 0.5))',

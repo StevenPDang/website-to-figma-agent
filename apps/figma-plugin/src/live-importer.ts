@@ -186,13 +186,19 @@ export async function importLiveScene(
         node = text;
         text.fontName = font;
         text.fontSize = Math.max(1, number(styles['font-size'], 16));
-        let characters = source.text ?? '';
+        const browserText = source.text ?? '';
+        let characters = browserText;
         if (
           !['pre', 'pre-wrap', 'break-spaces'].includes(
             styles['white-space'] ?? '',
           )
-        )
+        ) {
           characters = characters.replace(/\s+/g, ' ');
+          if (/^[ \t]*[\r\n]/.test(browserText))
+            characters = characters.trimStart();
+          if (/[\r\n][ \t]*$/.test(browserText))
+            characters = characters.trimEnd();
+        }
         if (styles['text-transform'] === 'uppercase')
           characters = characters.toUpperCase();
         if (styles['text-transform'] === 'lowercase')
