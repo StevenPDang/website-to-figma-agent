@@ -416,14 +416,14 @@ retaining validation support for existing deterministic inference artifacts.
 
 **Acceptance criteria:**
 
-- [ ] New decision kinds and payloads are closed, discriminated, and schema-valid.
-- [ ] Existing inference 1.0 fixtures still validate and new artifacts contain no provider-specific fields.
-- [ ] References, confidence, evidence, fallbacks, and merge provenance are validated.
+- [x] New decision kinds and payloads are closed, discriminated, and schema-valid.
+- [x] Existing inference 1.0 fixtures still validate and new artifacts contain no provider-specific fields.
+- [x] References, confidence, evidence, fallbacks, and merge provenance are validated.
 
 **Verification:**
 
-- [ ] Run `npm run validate:schemas` and focused contract/reference tests.
-- [ ] Run `npm run typecheck`.
+- [x] Run `npm run validate:schemas` and focused contract/reference tests.
+- [x] Run `npm run typecheck`.
 
 **Dependencies:** Approved agentic inference specification
 
@@ -438,14 +438,14 @@ from artifacts, and supply a deterministic fake provider for contract-level test
 
 **Acceptance criteria:**
 
-- [ ] Provider interfaces expose only domain inputs, proposals, diagnostics, and optional usage.
-- [ ] Request construction excludes secrets and partitions oversized pages by section.
-- [ ] A fake provider proves success, partial, and failure behavior without model access.
+- [x] Provider interfaces expose only domain inputs, proposals, diagnostics, and optional usage.
+- [x] Request construction excludes secrets and partitions oversized pages by section.
+- [x] A fake provider proves success, partial, and failure behavior without model access.
 
 **Verification:**
 
-- [ ] Run focused provider and request-builder tests.
-- [ ] Run `npm run typecheck`.
+- [x] Run focused provider and request-builder tests.
+- [x] Run `npm run typecheck`.
 
 **Dependencies:** Task 18
 
@@ -461,14 +461,14 @@ bounded process resources.
 
 **Acceptance criteria:**
 
-- [ ] Arguments, working directory, prompt, schema, and output paths are isolated and deterministic.
-- [ ] Missing executable, timeout, oversized output, nonzero exit, and malformed JSON return structured failures.
-- [ ] Available token usage is normalized without persisting auth, sessions, or private configuration.
+- [x] Arguments, working directory, prompt, schema, and output paths are isolated and deterministic.
+- [x] Missing executable, timeout, oversized output, nonzero exit, and malformed JSON return structured failures.
+- [x] Available token usage is normalized without persisting auth, sessions, or private configuration.
 
 **Verification:**
 
-- [ ] Run Codex-adapter tests against a fake executable.
-- [ ] Run an explicit local-Codex smoke command outside the ordinary test suite.
+- [x] Run Codex-adapter tests against a fake executable.
+- [x] Run an explicit local-Codex smoke command outside the ordinary test suite.
 
 **Dependencies:** Task 19
 
@@ -484,14 +484,14 @@ deterministic baseline while retaining rejection evidence.
 
 **Acceptance criteria:**
 
-- [ ] Unknown nodes, cycles, out-of-bounds geometry, unknown properties, and forbidden rasterization are rejected.
-- [ ] Valid decisions merge per property; invalid siblings fall back independently.
-- [ ] Merge output is deterministic and explains every accepted, rejected, and fallback choice.
+- [x] Unknown nodes, cycles, out-of-bounds geometry, unknown properties, and forbidden rasterization are rejected.
+- [x] Valid decisions merge per property; invalid siblings fall back independently.
+- [x] Merge output is deterministic and explains every accepted, rejected, and fallback choice.
 
 **Verification:**
 
-- [ ] Run proposal-policy and merge unit tests.
-- [ ] Validate merged inference artifacts with `npm run validate:schemas`.
+- [x] Run proposal-policy and merge unit tests.
+- [x] Validate merged inference artifacts with `npm run validate:schemas`.
 
 **Dependencies:** Tasks 18 and 19
 
@@ -501,9 +501,9 @@ deterministic baseline while retaining rejection evidence.
 
 ### Checkpoint F
 
-- [ ] Existing deterministic imports remain byte-for-byte stable where contracts are unchanged.
-- [ ] Fake and Codex providers satisfy one interface; failures produce deterministic fallback.
-- [ ] Build, typecheck, lint, format, schema validation, and contract/inference tests pass.
+- [x] Existing deterministic imports remain byte-for-byte stable where contracts are unchanged.
+- [x] Fake and Codex providers satisfy one interface; failures produce deterministic fallback.
+- [x] Build, typecheck, lint, format, schema validation, and contract/inference tests pass.
 - [ ] Human reviews the provider boundary before domain decision work.
 
 ### Phase G: Agentic Design-Intent Slices
