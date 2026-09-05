@@ -85,7 +85,7 @@ function connect() {
 form.onsubmit = (event) => {
   event.preventDefault();
   try {
-    const value: unknown = JSON.parse(input.value);
+    const value: unknown = parseDescriptorText(input.value);
     if (!value || typeof value !== 'object')
       throw new Error('Paste the CLI connection JSON.');
     const url: unknown = Reflect.get(value, 'url'),
@@ -100,7 +100,7 @@ form.onsubmit = (event) => {
       throw new Error('Invalid local connection descriptor');
     if (!destination) throw new Error('Waiting for destination document.');
     descriptor = { url, runId, authToken };
-    input.value = '';
+    input.value = JSON.stringify(descriptor, null, 2);
     button.disabled = true;
     connect();
   } catch (error) {
@@ -108,6 +108,24 @@ form.onsubmit = (event) => {
       error instanceof Error ? error.message : 'Invalid connection descriptor';
   }
 };
+
+function parseDescriptorText(text: string): unknown {
+  const normalized = text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
+  try {
+    return JSON.parse(normalized) as unknown;
+  } catch {
+    // The CLI may have been copied together with its explanatory stderr line.
+    const start = normalized.indexOf('{');
+    const end = normalized.lastIndexOf('}');
+    if (start < 0 || end <= start)
+      throw new Error('Paste the CLI connection JSON.');
+    return JSON.parse(normalized.slice(start, end + 1)) as unknown;
+  }
+}
 window.onmessage = (event) => {
   if (event.source !== parent) return;
   const envelope = event.data as { pluginMessage?: unknown };

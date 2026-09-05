@@ -45,7 +45,11 @@ it('connects the packaged browser UI and exchanges a validated request and respo
     await expect
       .poll(() => frame.locator('#destination').textContent())
       .toContain('UI fixture');
-    await frame.locator('textarea').fill(JSON.stringify(transport.descriptor));
+    await frame
+      .locator('textarea')
+      .fill(
+        `  \n\`\`\`json\n${JSON.stringify(transport.descriptor)}\n\`\`\`  \n`,
+      );
     await frame.locator('button').click();
     const scene: FigmaSceneArtifact = {
       schemaVersion: '1.0.0',
