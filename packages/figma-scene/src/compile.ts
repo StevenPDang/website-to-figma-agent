@@ -4,11 +4,16 @@ import type {
   WebsiteIrArtifact,
   InferenceArtifact,
 } from '@website-to-figma/contracts';
+import { createAgentScenePlan } from './agent-decisions.js';
 
 export function compileScene(
   ir: WebsiteIrArtifact,
   inference?: InferenceArtifact,
 ): FigmaSceneArtifact {
+  const agentPlan =
+    inference?.schemaVersion === '1.1.0'
+      ? createAgentScenePlan(ir, inference)
+      : undefined;
   const layoutBySource = new Map(
     (inference?.payload.decisions ?? [])
       .filter((decision) => decision.kind === 'layout')
@@ -16,7 +21,11 @@ export function compileScene(
   );
   const eligible = new Set(
     ir.payload.nodes
-      .filter((n) => n.visible !== false || n.parentNodeId === null)
+      .filter(
+        (n) =>
+          (n.visible !== false || n.parentNodeId === null) &&
+          !agentPlan?.suppressedSourceNodeIds.has(n.sourceNodeId),
+      )
       .map((n) => n.nodeId),
   );
   const byId = new Map(ir.payload.nodes.map((n) => [n.nodeId, n]));
@@ -61,6 +70,8 @@ export function compileScene(
         styles['box-shadow'] && styles['box-shadow'] !== 'none'
           ? [styles['box-shadow']]
           : undefined;
+      const agentPatch = agentPlan?.patches.get(source.sourceNodeId);
+      const { styles: agentStyles, ...agentProperties } = agentPatch ?? {};
       return {
         sceneNodeId: `scene:${source.nodeId.slice(3)}`,
         sourceNodeId: source.sourceNodeId,
@@ -71,10 +82,20 @@ export function compileScene(
           .filter((id) => eligible.has(id))
           .map((id) => `scene:${id.slice(3)}`),
         kind,
-        name: source.text?.slice(0, 40) || `${kind}-${source.nodeId.slice(3)}`,
+        name:
+          agentPatch?.name ??
+          source.text?.slice(0, 40) ??
+          `${kind}-${source.nodeId.slice(3)}`,
         ...(source.rect ? { rect: source.rect } : {}),
         ...(source.text ? { text: source.text } : {}),
-        ...(source.styles ? { styles: source.styles } : {}),
+        ...(source.styles || agentStyles
+          ? {
+              styles: {
+                ...(source.styles ?? {}),
+                ...(agentStyles ?? {}),
+              },
+            }
+          : {}),
         ...(fills ? { fills } : {}),
         ...(typeof opacity === 'number' && Number.isFinite(opacity)
           ? { opacity }
@@ -96,6 +117,7 @@ export function compileScene(
                 : 'HORIZONTAL',
             }
           : {}),
+        ...agentProperties,
       };
     });
   return {
@@ -108,10 +130,15 @@ export function compileScene(
     payload: {
       sourceNodeIds: ir.payload.sourceNodeIds,
       rootNodeIds: ir.payload.nodes
-        .filter((node) => node.parentNodeId === null)
+        .filter(
+          (node) => node.parentNodeId === null && eligible.has(node.nodeId),
+        )
         .map((node) => `scene:${node.nodeId.slice(3)}`),
       nodes,
       assets: ir.payload.assets,
+      ...(agentPlan === undefined
+        ? {}
+        : { diagnostics: agentPlan.diagnostics }),
     },
   };
 }

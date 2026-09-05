@@ -293,8 +293,28 @@ function validateFigmaScene(
       `/payload/nodes/${index}`,
       issues,
     );
+    if (node.componentSourceNodeId !== undefined) {
+      requireReference(
+        node.componentSourceNodeId,
+        sourceIds,
+        `/payload/nodes/${index}/componentSourceNodeId`,
+        `Component source node ${node.componentSourceNodeId} does not exist`,
+        issues,
+      );
+    }
   });
   validateAssetSources(artifact.payload.assets, sourceIds, issues);
+  artifact.payload.diagnostics?.forEach((diagnostic, index) => {
+    if (diagnostic.sourceNodeId !== undefined) {
+      requireReference(
+        diagnostic.sourceNodeId,
+        sourceIds,
+        `/payload/diagnostics/${index}/sourceNodeId`,
+        `Diagnostic source node ${diagnostic.sourceNodeId} does not exist`,
+        issues,
+      );
+    }
+  });
   return issues;
 }
 

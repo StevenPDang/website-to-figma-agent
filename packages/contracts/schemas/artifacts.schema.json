@@ -673,6 +673,76 @@
           "additionalProperties": { "type": "string", "maxLength": 4096 }
         },
         "layoutMode": { "enum": ["NONE", "HORIZONTAL", "VERTICAL"] },
+        "layoutIntent": {
+          "enum": [
+            "horizontal",
+            "vertical",
+            "wrap",
+            "grid",
+            "freeform",
+            "overlay"
+          ]
+        },
+        "layoutWrap": { "type": "boolean" },
+        "itemSpacing": { "type": "number", "minimum": 0 },
+        "padding": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "top": { "type": "number", "minimum": 0 },
+            "right": { "type": "number", "minimum": 0 },
+            "bottom": { "type": "number", "minimum": 0 },
+            "left": { "type": "number", "minimum": 0 }
+          },
+          "required": ["top", "right", "bottom", "left"]
+        },
+        "clipsContent": { "type": "boolean" },
+        "componentSourceNodeId": { "$ref": "#/$defs/stableId" },
+        "constraints": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "horizontal": { "enum": ["fixed", "fill", "hug", "left-right"] },
+            "vertical": { "enum": ["fixed", "fill", "hug", "top-bottom"] },
+            "minWidth": { "type": "number", "minimum": 0 },
+            "maxWidth": { "type": "number", "minimum": 0 },
+            "provenance": { "const": "inferred-single-viewport" }
+          },
+          "required": ["horizontal", "vertical", "provenance"]
+        },
+        "typography": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "requestedFamily": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            },
+            "resolvedFamily": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            },
+            "weight": { "type": "number", "minimum": 1, "maximum": 1000 },
+            "style": { "enum": ["normal", "italic"] },
+            "preserveLineCount": { "type": "boolean" },
+            "expectedLineCount": { "type": "integer", "minimum": 1 }
+          },
+          "required": [
+            "requestedFamily",
+            "resolvedFamily",
+            "weight",
+            "style",
+            "preserveLineCount"
+          ]
+        },
+        "fallbackRepresentation": { "enum": ["editable", "raster"] },
+        "inferenceDecisionIds": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/stableId" },
+          "uniqueItems": true
+        },
         "fills": {
           "type": "array",
           "items": { "type": "string", "maxLength": 4096 }
@@ -882,6 +952,10 @@
                 "assets": {
                   "type": "array",
                   "items": { "$ref": "#/$defs/asset" }
+                },
+                "diagnostics": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/diagnostic" }
                 }
               },
               "required": ["sourceNodeIds", "rootNodeIds", "nodes", "assets"]

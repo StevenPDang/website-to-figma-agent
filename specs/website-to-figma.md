@@ -429,6 +429,15 @@ from missing content, overlaps, clipping, hierarchy, ordering, and large geometr
 Structural defects take priority over aggregate similarity scores. Human acceptance is
 recorded separately and does not weaken automated fixture thresholds.
 
+### Enriched Figma Scene Contract
+
+Agentic compilation adds optional, provider-neutral scene properties for inferred
+layout mode and wrapping, spacing and padding, clipping, component-source identity,
+single-viewport constraints, typography provenance, scoped fallback representation,
+and contributing inference decision IDs. Scene diagnostics record accepted decisions
+that cannot yet produce a concrete Figma effect. Existing deterministic scenes omit
+these properties and retain their current serialized form.
+
 ### Candidate Render Protocol
 
 The current one-request protocol cannot support automatic visual correction. The

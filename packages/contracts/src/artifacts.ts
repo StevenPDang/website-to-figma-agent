@@ -270,6 +270,30 @@ export interface FigmaSceneNode {
   text?: string;
   styles?: Record<string, string>;
   layoutMode?: 'NONE' | 'HORIZONTAL' | 'VERTICAL';
+  layoutIntent?:
+    'horizontal' | 'vertical' | 'wrap' | 'grid' | 'freeform' | 'overlay';
+  layoutWrap?: boolean;
+  itemSpacing?: number;
+  padding?: { top: number; right: number; bottom: number; left: number };
+  clipsContent?: boolean;
+  componentSourceNodeId?: string;
+  constraints?: {
+    horizontal: 'fixed' | 'fill' | 'hug' | 'left-right';
+    vertical: 'fixed' | 'fill' | 'hug' | 'top-bottom';
+    minWidth?: number;
+    maxWidth?: number;
+    provenance: 'inferred-single-viewport';
+  };
+  typography?: {
+    requestedFamily: string;
+    resolvedFamily: string;
+    weight: number;
+    style: 'normal' | 'italic';
+    preserveLineCount: boolean;
+    expectedLineCount?: number;
+  };
+  fallbackRepresentation?: 'editable' | 'raster';
+  inferenceDecisionIds?: string[];
   fills?: string[];
   opacity?: number;
   cornerRadius?: number;
@@ -283,6 +307,7 @@ export type FigmaSceneArtifact = ArtifactEnvelope<
     rootNodeIds: string[];
     nodes: FigmaSceneNode[];
     assets: AssetReference[];
+    diagnostics?: Diagnostic[];
   }
 >;
 
