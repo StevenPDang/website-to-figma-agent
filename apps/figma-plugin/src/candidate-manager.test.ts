@@ -88,4 +88,23 @@ describe('candidate manager', () => {
     expect(removeOwnedRevision).toHaveBeenCalledWith('run:test', 1);
     expect(retainOwnedRevision).toHaveBeenCalledWith('run:test', 0);
   });
+
+  it('removes a pending revision that completes after cancellation', async () => {
+    let complete: ((value: CandidateResponse) => void) | undefined;
+    const removeOwnedRevision = vi.fn();
+    const manager = createCandidateManager({
+      importCandidate: () =>
+        new Promise<CandidateResponse>((resolve) => {
+          complete = resolve;
+        }),
+      removeOwnedRevision,
+      retainOwnedRevision: vi.fn(),
+    });
+    const pending = manager.render(request(0));
+    expect(manager.cancel('run:test')).toBeNull();
+    if (complete === undefined) throw new Error('Missing import resolver.');
+    complete(response(0));
+    await expect(pending).rejects.toThrow('ended before import completed');
+    expect(removeOwnedRevision).toHaveBeenCalledWith('run:test', 0);
+  });
 });

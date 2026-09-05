@@ -62,6 +62,10 @@ export function createCandidateManager(
       const work = adapter.importCandidate(request).then(
         (response) => {
           state.pending.delete(request.revision);
+          if (state.ended) {
+            adapter.removeOwnedRevision(request.runId, request.revision);
+            throw new Error('Candidate run ended before import completed');
+          }
           state.completed.set(request.revision, response);
           state.nextRevision += 1;
           return response;
