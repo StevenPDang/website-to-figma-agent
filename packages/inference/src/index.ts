@@ -14,3 +14,5 @@ export * from './agent-components.js';
 export * from './carousel.js';
 export * from './typography.js';
 export * from './fallback.js';
+export * from './candidate-history.js';
+export * from './correction-loop.js';

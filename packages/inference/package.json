@@ -7,6 +7,7 @@
   "types": "./dist/src/index.d.ts",
   "dependencies": {
     "@website-to-figma/contracts": "0.0.0",
+    "@website-to-figma/visual-qa": "0.0.0",
     "@website-to-figma/website-ir": "0.0.0"
   }
 }
