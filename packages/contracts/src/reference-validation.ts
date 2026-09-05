@@ -142,6 +142,13 @@ function validateInference(
         ...artifact.payload.proposedDecisions,
       ].map((decision) => decision.decisionId),
     );
+    collectUniqueIds(
+      artifact.payload.rejectedDecisions.map((decision) => decision.decisionId),
+      '/payload/rejectedDecisions',
+      'decisionId',
+      'rejected decision',
+      issues,
+    ).forEach((id) => knownDecisionIds.add(id));
     artifact.payload.mergeOutcomes.forEach((outcome, index) => {
       requireReference(
         outcome.decisionId,
