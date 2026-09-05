@@ -51,7 +51,7 @@ function connect() {
       if (message.runId !== current.runId) throw new Error('Run mismatch');
       if (message.type === 'hello-ack') {
         authenticated = true;
-        status.textContent = 'Connected. Waiting for captured page…';
+        status.textContent = 'Connected. The CLI is capturing the page…';
         return;
       }
       if (!authenticated || message.type !== 'import-request')

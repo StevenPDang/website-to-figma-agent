@@ -51,6 +51,9 @@ it('connects the packaged browser UI and exchanges a validated request and respo
         `  \n\`\`\`json\n${JSON.stringify(transport.descriptor)}\n\`\`\`  \n`,
       );
     await frame.locator('button').click();
+    await expect
+      .poll(() => frame.locator('[role=status]').textContent())
+      .toBe('Connected. The CLI is capturing the page…');
     const scene: FigmaSceneArtifact = {
       schemaVersion: '1.0.0',
       artifactKind: 'figma-scene',
