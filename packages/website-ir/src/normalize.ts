@@ -12,16 +12,24 @@ export function normalizeRawCapture(
       .filter((asset) => asset.kind === 'image')
       .map((asset) => asset.sourceNodeId),
   );
+  const rawBySource = new Map(
+    raw.payload.nodes.map((node) => [node.sourceNodeId, node]),
+  );
+  const isInsideRasterFallback = (
+    source: RawCaptureArtifact['payload']['nodes'][number],
+  ) => {
+    let parent = source.parentSourceNodeId;
+    while (parent) {
+      if (rasterFallbacks.has(parent)) return true;
+      parent = rawBySource.get(parent)?.parentSourceNodeId ?? null;
+    }
+    return false;
+  };
   const nodes: WebsiteIrNode[] = raw.payload.nodes.map((source) => {
     const tag = source.tagName ?? '';
     let kind: WebsiteIrNode['kind'] = source.kind === 'text' ? 'text' : 'group';
     if (source.kind === 'element') {
-      if (tag === 'img') kind = 'image';
-      else if (
-        (tag === 'video' || tag === 'canvas') &&
-        rasterFallbacks.has(source.sourceNodeId)
-      )
-        kind = 'image';
+      if (rasterFallbacks.has(source.sourceNodeId)) kind = 'image';
       else if (tag === 'svg') kind = 'svg';
       else if (tag === 'ellipse' || tag === 'circle') kind = 'ellipse';
       else if (
@@ -63,7 +71,11 @@ export function normalizeRawCapture(
       ...(source.rect ? { rect: source.rect } : {}),
       ...(source.text ? { text: source.text } : {}),
       ...(source.styles ? { styles: source.styles } : {}),
-      ...(source.visible === undefined ? {} : { visible: source.visible }),
+      ...(isInsideRasterFallback(source)
+        ? { visible: false }
+        : source.visible === undefined
+          ? {}
+          : { visible: source.visible }),
     };
   });
   return {

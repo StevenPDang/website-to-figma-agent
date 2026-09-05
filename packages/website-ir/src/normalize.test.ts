@@ -48,4 +48,27 @@ describe('normalizeRawCapture', () => {
     });
     expect(ir.payload.nodes[0]?.childNodeIds).toEqual(['ir:0.0']);
   });
+
+  it('turns an element screenshot fallback into one image and hides its descendants', () => {
+    const root = raw.payload.nodes[0];
+    const child = raw.payload.nodes[1];
+    if (!root || !child) throw new Error('Invalid normalization fixture');
+    const ir = normalizeRawCapture({
+      ...raw,
+      payload: {
+        rootNodeId: 'dom:0',
+        assets: [
+          {
+            assetId: 'asset:0',
+            sourceNodeId: 'dom:0',
+            kind: 'image',
+            mimeType: 'image/png',
+          },
+        ],
+        nodes: [{ ...root, tagName: 'div' }, child],
+      },
+    });
+    expect(ir.payload.nodes[0]?.kind).toBe('image');
+    expect(ir.payload.nodes[1]?.visible).toBe(false);
+  });
 });

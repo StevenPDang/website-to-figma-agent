@@ -70,4 +70,41 @@ describe('asset capture', () => {
       await fixture.close();
     }
   }, 20_000);
+
+  it('captures a transformed clipped image carousel as its visible rendered state', async () => {
+    const pixel = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+    const fixture = await startFixtureServer(`
+      <div id="carousel" style="width:300px;height:100px;overflow-x:hidden">
+        <div style="display:flex;transform:translateX(-20px)">
+          <img src="${pixel}" style="width:100px;height:100px">
+          <img src="${pixel}" style="width:100px;height:100px">
+          <img src="${pixel}" style="width:100px;height:100px">
+        </div>
+      </div>
+    `);
+    const session = await openBrowserSession({
+      url: fixture.url,
+      viewport: { width: 800, height: 600 },
+      allowLoopback: true,
+    });
+    try {
+      const dom = await captureDom(session.page);
+      const carousel = dom.nodes.find(
+        (node) => node.tagName === 'div' && node.rect?.width === 300,
+      );
+      const result = await captureAssets(session.page);
+      expect(result.assets).toEqual([
+        expect.objectContaining({
+          sourceNodeId: carousel?.sourceNodeId,
+          kind: 'image',
+          mimeType: 'image/png',
+          width: 300,
+          height: 100,
+        }),
+      ]);
+    } finally {
+      await session.close();
+      await fixture.close();
+    }
+  }, 20_000);
 });

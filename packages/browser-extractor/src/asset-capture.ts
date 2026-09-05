@@ -61,7 +61,30 @@ const discoverAssets = () => {
     if (node.nodeType !== Node.ELEMENT_NODE) return;
     const element = node as Element;
     const rect = element.getBoundingClientRect();
-    if (element.tagName.toLowerCase() === 'img') {
+    const tag = element.tagName.toLowerCase();
+    const style = getComputedStyle(element);
+    const isTransformedCarousel =
+      !['img', 'video', 'svg', 'canvas'].includes(tag) &&
+      rect.width > 0 &&
+      rect.height > 0 &&
+      rect.height <= window.innerHeight * 1.5 &&
+      ['hidden', 'clip'].includes(style.overflowX) &&
+      element.querySelectorAll('img').length >= 3 &&
+      [...element.querySelectorAll('*')].some(
+        (descendant) => getComputedStyle(descendant).transform !== 'none',
+      );
+    if (isTransformedCarousel) {
+      element.setAttribute(marker, path);
+      result.push({
+        sourceNodeId: `dom:${path}`,
+        kind: 'image',
+        elementScreenshotId: path,
+        width: rect.width,
+        height: rect.height,
+      });
+      return;
+    }
+    if (tag === 'img') {
       const image = element as HTMLImageElement;
       result.push({
         sourceNodeId: `dom:${path}`,
@@ -70,50 +93,16 @@ const discoverAssets = () => {
         width: image.naturalWidth || rect.width,
         height: image.naturalHeight || rect.height,
       });
-    } else if (element.tagName.toLowerCase() === 'video') {
-      const video = element as HTMLVideoElement;
-      let captured = false;
-      if (video.poster) {
-        result.push({
-          sourceNodeId: `dom:${path}`,
-          kind: 'image',
-          url: video.poster,
-          width: rect.width,
-          height: rect.height,
-        });
-        captured = true;
-      } else if (video.readyState >= 2 && video.videoWidth > 0) {
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          const context = canvas.getContext('2d');
-          context?.drawImage(video, 0, 0);
-          const dataUrl = canvas.toDataURL('image/png');
-          if (dataUrl !== 'data:,')
-            result.push({
-              sourceNodeId: `dom:${path}`,
-              kind: 'image',
-              url: dataUrl,
-              width: rect.width,
-              height: rect.height,
-            });
-          captured = dataUrl !== 'data:,';
-        } catch {
-          // Cross-origin media remains an explicitly unsupported fallback.
-        }
-      }
-      if (!captured) {
-        element.setAttribute(marker, path);
-        result.push({
-          sourceNodeId: `dom:${path}`,
-          kind: 'image',
-          elementScreenshotId: path,
-          width: rect.width,
-          height: rect.height,
-        });
-      }
-    } else if (element.tagName.toLowerCase() === 'canvas') {
+    } else if (tag === 'video') {
+      element.setAttribute(marker, path);
+      result.push({
+        sourceNodeId: `dom:${path}`,
+        kind: 'image',
+        elementScreenshotId: path,
+        width: rect.width,
+        height: rect.height,
+      });
+    } else if (tag === 'canvas') {
       try {
         const dataUrl = (element as HTMLCanvasElement).toDataURL('image/png');
         if (dataUrl !== 'data:,')
@@ -127,7 +116,7 @@ const discoverAssets = () => {
       } catch {
         // A cross-origin canvas is intentionally left as an unsupported media diagnostic.
       }
-    } else if (element.tagName.toLowerCase() === 'svg') {
+    } else if (tag === 'svg') {
       result.push({
         sourceNodeId: `dom:${path}`,
         kind: 'svg',
@@ -147,37 +136,10 @@ const discoverAssets = () => {
   return result;
 };
 
-const waitForMediaFrames = async (page: Page) => {
-  await page.evaluate(async () => {
-    const videos = [...document.querySelectorAll('video')];
-    await Promise.race([
-      Promise.all(
-        videos.map((video) =>
-          video.readyState >= 2
-            ? Promise.resolve()
-            : new Promise<void>((resolve) => {
-                video.addEventListener(
-                  'loadeddata',
-                  () => {
-                    resolve();
-                  },
-                  {
-                    once: true,
-                  },
-                );
-              }),
-        ),
-      ),
-      new Promise<void>((resolve) => setTimeout(resolve, 3000)),
-    ]);
-  });
-};
-
 export async function captureAssets(
   page: Page,
   options: AssetCaptureOptions = {},
 ): Promise<AssetCaptureResult> {
-  await waitForMediaFrames(page);
   const discovered = await page.evaluate(discoverAssets);
   const maxBytes = options.maxAssetBytes ?? 500 * 1024 * 1024;
   const assets: CapturedAsset[] = [];
@@ -201,13 +163,10 @@ export async function captureAssets(
       if (item.kind === 'svg') bytes = Buffer.from(item.markup ?? '', 'utf8');
       else if (item.elementScreenshotId) {
         bytes = await page
-          .locator(
-            `[${screenshotMarker}="${item.elementScreenshotId}"]`,
-          )
+          .locator(`[${screenshotMarker}="${item.elementScreenshotId}"]`)
           .screenshot({ type: 'png' });
         mimeType = 'image/png';
-      }
-      else if (item.url?.startsWith('data:')) {
+      } else if (item.url?.startsWith('data:')) {
         const match = item.url.match(/^data:([^;,]+)?(;base64)?,(.*)$/s);
         if (!match) throw new Error('Invalid data URL');
         mimeType = match[1] ?? mimeType;

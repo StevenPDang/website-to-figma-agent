@@ -23,6 +23,7 @@ Implementation and live integration approved on 2026-09-04. Protocol 1.1.0 and p
 - Layout and component inference begins with deterministic heuristics behind a pluggable inference interface; external model calls are not required for the MVP.
 - A run supports at most 15,000 captured DOM nodes, 30,000 CSS pixels of document height, 500 MB of artifacts, and 10 minutes of wall-clock time.
 - An unavailable original font produces a partial result with an explicit, deterministic substitute and diagnostic.
+- Before capture, high-confidence cookie or consent overlays may be hidden locally, together with an identified backdrop, without activating controls or persisting consent. Every suppression is reported as a diagnostic.
 
 ## Objective
 

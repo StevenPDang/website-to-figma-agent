@@ -1,4 +1,5 @@
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import WebSocket from 'ws';
@@ -16,6 +17,7 @@ it('runs Chrome capture through authenticated result exchange and measured PNG Q
   );
   const outputDir = await mkdtemp(join(tmpdir(), 'live-figma-'));
   let socket: WebSocket | undefined;
+  let connectionCreatedBeforeCapture = false;
   try {
     const result = await runImport({
       url: fixture.url,
@@ -24,6 +26,9 @@ it('runs Chrome capture through authenticated result exchange and measured PNG Q
       pluginTimeoutMs: 5000,
       pluginPort: 0,
       onConnection: (descriptor) => {
+        connectionCreatedBeforeCapture = !existsSync(
+          join(outputDir, 'raw-capture.json'),
+        );
         socket = new WebSocket(descriptor.url);
         socket.on('open', () => {
           socket?.send(
@@ -84,6 +89,7 @@ it('runs Chrome capture through authenticated result exchange and measured PNG Q
         });
       },
     });
+    expect(connectionCreatedBeforeCapture).toBe(true);
     expect(result.status).toBe('success');
     expect(result.metrics).toEqual({ ssim: 1, changedPixelRatio: 0 });
     for (const name of [

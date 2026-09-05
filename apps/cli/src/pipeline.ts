@@ -10,6 +10,7 @@ import {
   captureAssets,
   captureScreenshot,
   openBrowserSession,
+  preparePageForCapture,
 } from '@website-to-figma/browser-extractor';
 import {
   validateArtifact,
@@ -49,18 +50,29 @@ export async function runImport(options: ImportOptions) {
       JSON.stringify(artifact, null, 2),
     );
   };
-  const session = await openBrowserSession({
-    url: options.url,
-    viewport,
-    ...(options.allowLoopback === undefined
-      ? {}
-      : { allowLoopback: options.allowLoopback }),
-  });
+  let transport: Awaited<ReturnType<typeof createLiveSession>> | undefined;
+  let session: Awaited<ReturnType<typeof openBrowserSession>> | undefined;
   try {
-    const captured = await captureDom(session.page);
+    if (!options.captureOnly) {
+      transport = await createLiveSession(
+        runId,
+        options.pluginTimeoutMs ?? 120_000,
+        options.pluginPort ?? 3847,
+      );
+      options.onConnection?.(transport.descriptor);
+    }
+    session = await openBrowserSession({
+      url: options.url,
+      viewport,
+      ...(options.allowLoopback === undefined
+        ? {}
+        : { allowLoopback: options.allowLoopback }),
+    });
+    const preparation = await preparePageForCapture(session.page);
     const media = await captureAssets(session.page, {
       allowLoopback: options.allowLoopback ?? false,
     });
+    const captured = await captureDom(session.page);
     const screenshot = await captureScreenshot(session.page);
     await writeFile(`${outputDir}/reference.png`, screenshot.bytes);
     for (const asset of media.assets) {
@@ -108,6 +120,7 @@ export async function runImport(options: ImportOptions) {
         : diagnostic,
     );
     const diagnostics: Diagnostic[] = [
+      ...preparation.diagnostics,
       ...captureDiagnostics,
       ...media.diagnostics,
       ...screenshot.diagnostics,
@@ -153,14 +166,8 @@ export async function runImport(options: ImportOptions) {
         message: 'Capture-only mode; Figma import and visual QA were not run.',
       });
     else {
-      let transport: Awaited<ReturnType<typeof createLiveSession>> | undefined;
       try {
-        transport = await createLiveSession(
-          runId,
-          options.pluginTimeoutMs ?? 120_000,
-          options.pluginPort ?? 3847,
-        );
-        options.onConnection?.(transport.descriptor);
+        if (!transport) throw new Error('Live session unavailable');
         const response = await transport.importScene({
           type: 'import-request',
           protocolVersion: LIVE_PROTOCOL_VERSION,
@@ -206,8 +213,6 @@ export async function runImport(options: ImportOptions) {
           severity: 'error',
           message: error instanceof Error ? error.message : 'Import failed',
         });
-      } finally {
-        await transport?.close();
       }
     }
     if (diagnostics.length)
@@ -256,6 +261,7 @@ export async function runImport(options: ImportOptions) {
       counts: summary,
     };
   } finally {
-    await session.close();
+    await session?.close();
+    await transport?.close();
   }
 }
