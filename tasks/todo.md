@@ -504,7 +504,7 @@ deterministic baseline while retaining rejection evidence.
 - [x] Existing deterministic imports remain byte-for-byte stable where contracts are unchanged.
 - [x] Fake and Codex providers satisfy one interface; failures produce deterministic fallback.
 - [x] Build, typecheck, lint, format, schema validation, and contract/inference tests pass.
-- [ ] Human reviews the provider boundary before domain decision work.
+- [x] Human reviews the provider boundary before domain decision work.
 
 ### Phase G: Agentic Design-Intent Slices
 
@@ -516,14 +516,14 @@ tolerances against captured bounds.
 
 **Acceptance criteria:**
 
-- [ ] Ambiguous row, column, wrap, grid, and overlay fixtures receive evidence-backed layouts.
-- [ ] Eligible layers receive stable role-based names with deterministic fallbacks.
-- [ ] Responsive constraints are labeled inferred and cannot claim multi-viewport validation.
+- [x] Ambiguous row, column, wrap, grid, and overlay fixtures receive evidence-backed layouts.
+- [x] Eligible layers receive stable role-based names with deterministic fallbacks.
+- [x] Responsive constraints are labeled inferred and cannot claim multi-viewport validation.
 
 **Verification:**
 
-- [ ] Run layout/naming/responsive unit and fixture tests.
-- [ ] Run `npm run typecheck`.
+- [x] Run layout/naming/responsive unit and fixture tests.
+- [x] Run `npm run typecheck`.
 
 **Dependencies:** Task 21
 
@@ -539,14 +539,14 @@ or retaining proven loop clones.
 
 **Acceptance criteria:**
 
-- [ ] Repeated structures become components only when overrides preserve meaningful differences.
-- [ ] Carousel panels remain individually editable, ordered, and clipped to their viewport.
-- [ ] Unique visible content cannot be suppressed without structural and asset evidence.
+- [x] Repeated structures become components only when overrides preserve meaningful differences.
+- [x] Carousel panels remain individually editable, ordered, and clipped to their viewport.
+- [x] Unique visible content cannot be suppressed without structural and asset evidence.
 
 **Verification:**
 
-- [ ] Run component and carousel unit tests plus dedicated browser fixtures.
-- [ ] Inspect semantic scene invariants for editable panels and instances.
+- [x] Run component and carousel unit tests plus dedicated browser fixtures.
+- [x] Inspect semantic scene invariants for editable panels and instances.
 
 **Dependencies:** Task 21
 
@@ -562,14 +562,14 @@ media roots.
 
 **Acceptance criteria:**
 
-- [ ] Typography fixtures preserve expected lines and avoid overlap with unavailable fonts.
-- [ ] Requested font intent and chosen substitute remain traceable.
-- [ ] Ordinary text, full pages, and major sections are rejected as raster fallbacks.
+- [x] Typography fixtures preserve expected lines and avoid overlap with unavailable fonts.
+- [x] Requested font intent and chosen substitute remain traceable.
+- [x] Ordinary text, full pages, and major sections are rejected as raster fallbacks.
 
 **Verification:**
 
-- [ ] Run typography/fallback unit and fixture tests.
-- [ ] Run editability invariant tests.
+- [x] Run typography/fallback unit and fixture tests.
+- [x] Run editability invariant tests.
 
 **Dependencies:** Task 21
 
@@ -585,14 +585,14 @@ aggregate metrics to hide editability failures.
 
 **Acceptance criteria:**
 
-- [ ] Seeded missing assets, overlaps, clipping, ordering, and geometry drift are classified correctly.
-- [ ] Antialiasing-only and known font-rasterization noise receive lower priority.
-- [ ] Candidate ranking rejects structural regressions before comparing pixel scores.
+- [x] Seeded missing assets, overlaps, clipping, ordering, and geometry drift are classified correctly.
+- [x] Antialiasing-only and known font-rasterization noise receive lower priority.
+- [x] Candidate ranking rejects structural regressions before comparing pixel scores.
 
 **Verification:**
 
-- [ ] Run visual-QA classification and ranking tests with deterministic image pairs.
-- [ ] Validate source-linked discrepancy regions.
+- [x] Run visual-QA classification and ranking tests with deterministic image pairs.
+- [x] Validate source-linked discrepancy regions.
 
 **Dependencies:** Task 18
 
@@ -607,14 +607,14 @@ responsive, visibility, and fallback decisions when compiling a validated Figma 
 
 **Acceptance criteria:**
 
-- [ ] Every accepted decision has a deterministic scene effect or an explicit unsupported diagnostic.
-- [ ] Components, instances, constraints, clipping, and names preserve source traceability.
-- [ ] Rejected/absent decisions produce the existing editable deterministic scene.
+- [x] Every accepted decision has a deterministic scene effect or an explicit unsupported diagnostic.
+- [x] Components, instances, constraints, clipping, and names preserve source traceability.
+- [x] Rejected/absent decisions produce the existing editable deterministic scene.
 
 **Verification:**
 
-- [ ] Run scene compiler tests for every new decision family.
-- [ ] Validate deterministic fallback and schema-valid output.
+- [x] Run scene compiler tests for every new decision family.
+- [x] Validate deterministic fallback and schema-valid output.
 
 **Dependencies:** Tasks 22–24
 
@@ -624,10 +624,10 @@ responsive, visibility, and fallback decisions when compiling a validated Figma 
 
 ### Checkpoint G
 
-- [ ] Ambiguous fixtures demonstrate every approved inference capability.
-- [ ] Carousel, text, component, and fallback editability invariants pass.
-- [ ] Deterministic mode has no behavioral regression.
-- [ ] Build, typecheck, lint, format, schema, inference, scene, and QA tests pass.
+- [x] Ambiguous fixtures demonstrate every approved inference capability.
+- [x] Carousel, text, component, and fallback editability invariants pass.
+- [x] Deterministic mode has no behavioral regression.
+- [x] Build, typecheck, lint, format, schema, inference, scene, and QA tests pass.
 
 ### Phase H: Iterative Candidate Rendering
 
