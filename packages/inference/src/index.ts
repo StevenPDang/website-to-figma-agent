@@ -10,3 +10,5 @@ export * from './merge.js';
 export * from './agent-layout.js';
 export * from './semantic-names.js';
 export * from './responsive.js';
+export * from './agent-components.js';
+export * from './carousel.js';
