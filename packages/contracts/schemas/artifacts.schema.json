@@ -14,7 +14,7 @@
     "metadata": {
       "type": "object",
       "properties": {
-        "schemaVersion": { "const": "1.0.0" },
+        "schemaVersion": { "enum": ["1.0.0", "1.1.0"] },
         "artifactKind": {
           "enum": [
             "raw-capture",
@@ -218,6 +218,415 @@
         "fallback"
       ]
     },
+    "agentDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "decisionId": { "$ref": "#/$defs/stableId" },
+        "sourceNodeIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/stableId" },
+          "uniqueItems": true
+        },
+        "kind": {
+          "enum": [
+            "section",
+            "layout",
+            "component",
+            "carousel",
+            "typography",
+            "semantic-name",
+            "responsive",
+            "fallback",
+            "qa-priority",
+            "token"
+          ]
+        },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1, "maxLength": 4096 }
+        },
+        "fallback": {
+          "enum": ["geometry", "independent-nodes", "unsupported"]
+        },
+        "origin": { "enum": ["deterministic", "agent"] },
+        "payload": { "type": "object" }
+      },
+      "required": [
+        "decisionId",
+        "sourceNodeIds",
+        "kind",
+        "confidence",
+        "evidence",
+        "fallback",
+        "origin",
+        "payload"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": { "kind": { "const": "section" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "payload": { "$ref": "#/$defs/sectionDecisionPayload" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "layout" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "payload": { "$ref": "#/$defs/layoutDecisionPayload" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "component" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "payload": { "$ref": "#/$defs/componentDecisionPayload" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "carousel" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "payload": { "$ref": "#/$defs/carouselDecisionPayload" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "typography" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "payload": { "$ref": "#/$defs/typographyDecisionPayload" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "semantic-name" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "payload": { "$ref": "#/$defs/semanticNameDecisionPayload" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "responsive" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "payload": { "$ref": "#/$defs/responsiveDecisionPayload" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "fallback" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "payload": { "$ref": "#/$defs/fallbackDecisionPayload" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "qa-priority" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "payload": { "$ref": "#/$defs/qaPriorityDecisionPayload" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "token" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "payload": { "$ref": "#/$defs/tokenDecisionPayload" }
+            }
+          }
+        }
+      ]
+    },
+    "sectionDecisionPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "enum": [
+            "navigation",
+            "hero",
+            "content",
+            "gallery",
+            "footer",
+            "other"
+          ]
+        }
+      },
+      "required": ["role"]
+    },
+    "layoutDecisionPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "enum": [
+            "horizontal",
+            "vertical",
+            "wrap",
+            "grid",
+            "freeform",
+            "overlay"
+          ]
+        },
+        "gap": { "type": "number", "minimum": 0 },
+        "padding": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "top": { "type": "number", "minimum": 0 },
+            "right": { "type": "number", "minimum": 0 },
+            "bottom": { "type": "number", "minimum": 0 },
+            "left": { "type": "number", "minimum": 0 }
+          },
+          "required": ["top", "right", "bottom", "left"]
+        },
+        "align": { "enum": ["start", "center", "end", "stretch"] },
+        "justify": { "enum": ["start", "center", "end", "space-between"] }
+      },
+      "required": ["mode"]
+    },
+    "componentDecisionPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "instanceSourceNodeIds": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/stableId" },
+          "uniqueItems": true
+        },
+        "overrideSourceNodeIds": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/stableId" },
+          "uniqueItems": true
+        }
+      },
+      "required": ["name", "instanceSourceNodeIds", "overrideSourceNodeIds"]
+    },
+    "carouselDecisionPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "viewportSourceNodeId": { "$ref": "#/$defs/stableId" },
+        "panelSourceNodeIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/stableId" },
+          "uniqueItems": true
+        },
+        "cloneSourceNodeIds": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/stableId" },
+          "uniqueItems": true
+        },
+        "clipContent": { "type": "boolean" }
+      },
+      "required": [
+        "viewportSourceNodeId",
+        "panelSourceNodeIds",
+        "cloneSourceNodeIds",
+        "clipContent"
+      ]
+    },
+    "typographyDecisionPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requestedFamily": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "substituteFamily": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "weight": { "type": "number", "minimum": 1, "maximum": 1000 },
+        "style": { "enum": ["normal", "italic"] },
+        "lineHeight": { "type": "number", "exclusiveMinimum": 0 },
+        "letterSpacing": { "type": "number" },
+        "preserveLineCount": { "type": "boolean" }
+      },
+      "required": ["preserveLineCount"]
+    },
+    "semanticNameDecisionPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 512 }
+      },
+      "required": ["name"]
+    },
+    "responsiveDecisionPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "horizontal": { "enum": ["fixed", "fill", "hug", "left-right"] },
+        "vertical": { "enum": ["fixed", "fill", "hug", "top-bottom"] },
+        "minWidth": { "type": "number", "minimum": 0 },
+        "maxWidth": { "type": "number", "minimum": 0 }
+      },
+      "required": ["horizontal", "vertical"]
+    },
+    "fallbackDecisionPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "representation": { "enum": ["editable", "raster"] },
+        "reason": { "type": "string", "minLength": 1, "maxLength": 4096 }
+      },
+      "required": ["representation", "reason"]
+    },
+    "qaPriorityDecisionPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "enum": [
+            "missing-content",
+            "overlap",
+            "clipping",
+            "ordering",
+            "geometry",
+            "rendering-noise"
+          ]
+        },
+        "priority": { "enum": ["high", "medium", "low"] }
+      },
+      "required": ["category", "priority"]
+    },
+    "tokenDecisionPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tokenType": {
+          "enum": ["color", "typography", "spacing", "radius", "effect"]
+        },
+        "name": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "value": { "type": "string", "minLength": 1, "maxLength": 4096 }
+      },
+      "required": ["tokenType", "name", "value"]
+    },
+    "legacyInferencePayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sourceNodeIds": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/stableId" },
+          "uniqueItems": true
+        },
+        "decisions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/decision" }
+        }
+      },
+      "required": ["sourceNodeIds", "decisions"]
+    },
+    "agenticInferencePayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sourceNodeIds": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/stableId" },
+          "uniqueItems": true
+        },
+        "decisions": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              { "$ref": "#/$defs/decision" },
+              { "$ref": "#/$defs/agentDecision" }
+            ]
+          }
+        },
+        "deterministicDecisions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/decision" }
+        },
+        "proposedDecisions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/agentDecision" }
+        },
+        "rejectedDecisions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "decisionId": { "$ref": "#/$defs/stableId" },
+              "code": { "type": "string", "minLength": 1, "maxLength": 128 },
+              "reason": { "type": "string", "minLength": 1, "maxLength": 4096 }
+            },
+            "required": ["decisionId", "code", "reason"]
+          }
+        },
+        "mergeOutcomes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "decisionId": { "$ref": "#/$defs/stableId" },
+              "status": { "enum": ["accepted", "rejected", "fallback"] },
+              "supersedesDecisionId": { "$ref": "#/$defs/stableId" }
+            },
+            "required": ["decisionId", "status"]
+          }
+        }
+      },
+      "required": [
+        "sourceNodeIds",
+        "decisions",
+        "deterministicDecisions",
+        "proposedDecisions",
+        "rejectedDecisions",
+        "mergeOutcomes"
+      ]
+    },
     "figmaSceneNode": {
       "type": "object",
       "additionalProperties": false,
@@ -401,7 +810,7 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "schemaVersion": { "const": "1.0.0" },
+            "schemaVersion": { "enum": ["1.0.0", "1.1.0"] },
             "artifactKind": { "const": "inference" },
             "runId": { "$ref": "#/$defs/stableId" },
             "sourceUrl": {
@@ -411,23 +820,26 @@
             },
             "capturedAt": { "type": "string", "format": "date-time" },
             "viewport": { "$ref": "#/$defs/viewport" },
-            "payload": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "sourceNodeIds": {
-                  "type": "array",
-                  "items": { "$ref": "#/$defs/stableId" },
-                  "uniqueItems": true
-                },
-                "decisions": {
-                  "type": "array",
-                  "items": { "$ref": "#/$defs/decision" }
+            "payload": { "type": "object" }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": { "schemaVersion": { "const": "1.0.0" } },
+                "required": ["schemaVersion"]
+              },
+              "then": {
+                "properties": {
+                  "payload": { "$ref": "#/$defs/legacyInferencePayload" }
                 }
               },
-              "required": ["sourceNodeIds", "decisions"]
+              "else": {
+                "properties": {
+                  "payload": { "$ref": "#/$defs/agenticInferencePayload" }
+                }
+              }
             }
-          }
+          ]
         }
       ]
     },

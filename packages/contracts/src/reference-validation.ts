@@ -116,25 +116,132 @@ function validateInference(
     'source node',
     issues,
   );
-  collectUniqueIds(
-    artifact.payload.decisions.map((decision) => decision.decisionId),
+  validateInferenceDecisions(
+    artifact.payload.decisions,
+    sourceIds,
     '/payload/decisions',
+    issues,
+  );
+  if (artifact.schemaVersion === '1.1.0') {
+    validateInferenceDecisions(
+      artifact.payload.deterministicDecisions,
+      sourceIds,
+      '/payload/deterministicDecisions',
+      issues,
+    );
+    validateInferenceDecisions(
+      artifact.payload.proposedDecisions,
+      sourceIds,
+      '/payload/proposedDecisions',
+      issues,
+    );
+    const knownDecisionIds = new Set(
+      [
+        ...artifact.payload.decisions,
+        ...artifact.payload.deterministicDecisions,
+        ...artifact.payload.proposedDecisions,
+      ].map((decision) => decision.decisionId),
+    );
+    artifact.payload.mergeOutcomes.forEach((outcome, index) => {
+      requireReference(
+        outcome.decisionId,
+        knownDecisionIds,
+        `/payload/mergeOutcomes/${index}/decisionId`,
+        `Decision ${outcome.decisionId} does not exist`,
+        issues,
+      );
+      if (outcome.supersedesDecisionId !== undefined) {
+        requireReference(
+          outcome.supersedesDecisionId,
+          knownDecisionIds,
+          `/payload/mergeOutcomes/${index}/supersedesDecisionId`,
+          `Superseded decision ${outcome.supersedesDecisionId} does not exist`,
+          issues,
+        );
+      }
+    });
+  }
+  return issues;
+}
+
+function validateInferenceDecisions(
+  decisions: Extract<
+    Artifact,
+    { artifactKind: 'inference' }
+  >['payload']['decisions'],
+  sourceIds: ReadonlySet<string>,
+  basePath: string,
+  issues: ArtifactValidationIssue[],
+): void {
+  collectUniqueIds(
+    decisions.map((decision) => decision.decisionId),
+    basePath,
     'decisionId',
     'decision',
     issues,
   );
-  artifact.payload.decisions.forEach((decision, index) => {
+  decisions.forEach((decision, index) => {
     decision.sourceNodeIds.forEach((id, sourceIndex) => {
       requireReference(
         id,
         sourceIds,
-        `/payload/decisions/${index}/sourceNodeIds/${sourceIndex}`,
+        `${basePath}/${index}/sourceNodeIds/${sourceIndex}`,
+        `Source node ${id} does not exist`,
+        issues,
+      );
+    });
+    if (!('payload' in decision)) return;
+    const references = embeddedDecisionReferences(decision);
+    references.forEach(({ id, path }) => {
+      requireReference(
+        id,
+        sourceIds,
+        `${basePath}/${index}/payload/${path}`,
         `Source node ${id} does not exist`,
         issues,
       );
     });
   });
-  return issues;
+}
+
+function embeddedDecisionReferences(
+  decision: Extract<
+    Extract<
+      Artifact,
+      { artifactKind: 'inference' }
+    >['payload']['decisions'][number],
+    { payload: object }
+  >,
+): Array<{ id: string; path: string }> {
+  if (decision.kind === 'component') {
+    return [
+      ...decision.payload.instanceSourceNodeIds.map((id, index) => ({
+        id,
+        path: `instanceSourceNodeIds/${index}`,
+      })),
+      ...decision.payload.overrideSourceNodeIds.map((id, index) => ({
+        id,
+        path: `overrideSourceNodeIds/${index}`,
+      })),
+    ];
+  }
+  if (decision.kind === 'carousel') {
+    return [
+      {
+        id: decision.payload.viewportSourceNodeId,
+        path: 'viewportSourceNodeId',
+      },
+      ...decision.payload.panelSourceNodeIds.map((id, index) => ({
+        id,
+        path: `panelSourceNodeIds/${index}`,
+      })),
+      ...decision.payload.cloneSourceNodeIds.map((id, index) => ({
+        id,
+        path: `cloneSourceNodeIds/${index}`,
+      })),
+    ];
+  }
+  return [];
 }
 
 function validateFigmaScene(

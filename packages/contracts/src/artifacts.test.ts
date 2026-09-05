@@ -142,6 +142,57 @@ describe('validateArtifact', () => {
     });
   });
 
+  it('accepts provider-neutral inference 1.1 decisions and merge provenance', () => {
+    const artifact = {
+      ...metadata,
+      schemaVersion: '1.1.0',
+      artifactKind: 'inference',
+      payload: {
+        sourceNodeIds: ['source:root'],
+        decisions: [
+          {
+            decisionId: 'decision:name-root',
+            sourceNodeIds: ['source:root'],
+            kind: 'semantic-name',
+            confidence: 0.95,
+            evidence: ['top-level heading and primary content'],
+            fallback: 'geometry',
+            origin: 'agent',
+            payload: { name: 'Hero' },
+          },
+        ],
+        deterministicDecisions: [],
+        proposedDecisions: [],
+        rejectedDecisions: [
+          {
+            decisionId: 'decision:bad-raster',
+            code: 'FORBIDDEN_RASTERIZATION',
+            reason: 'Ordinary text must remain editable.',
+          },
+        ],
+        mergeOutcomes: [
+          { decisionId: 'decision:name-root', status: 'accepted' },
+        ],
+      },
+    } as const;
+
+    expect(validateArtifact(artifact)).toEqual({ ok: true, value: artifact });
+  });
+
+  it('rejects schema 1.1 for artifacts other than inference', () => {
+    const artifact = { ...artifacts[0], schemaVersion: '1.1.0' };
+
+    expect(validateArtifact(artifact)).toEqual({
+      ok: false,
+      issues: [
+        expect.objectContaining({
+          code: 'SCHEMA_VALIDATION',
+          path: '/schemaVersion',
+        }),
+      ],
+    });
+  });
+
   it('reports schema issues only for the selected artifact kind', () => {
     const artifact = { ...artifacts[0], sourceUrl: 'not a URL' };
 

@@ -12,6 +12,7 @@ import {
   type ArtifactKind,
   type ArtifactValidationIssue,
   type ArtifactValidationResult,
+  INFERENCE_SCHEMA_VERSION,
   SCHEMA_VERSION,
 } from './artifacts.js';
 
@@ -38,7 +39,12 @@ const artifactValidators = Object.fromEntries(
 
 export function validateArtifact(input: unknown): ArtifactValidationResult {
   const suppliedVersion = readProperty(input, 'schemaVersion');
-  if (suppliedVersion !== undefined && suppliedVersion !== SCHEMA_VERSION) {
+  const suppliedKind = readProperty(input, 'artifactKind');
+  const supportedVersion =
+    suppliedVersion === SCHEMA_VERSION ||
+    (suppliedVersion === INFERENCE_SCHEMA_VERSION &&
+      suppliedKind === 'inference');
+  if (suppliedVersion !== undefined && !supportedVersion) {
     return {
       ok: false,
       issues: [
