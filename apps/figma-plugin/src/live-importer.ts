@@ -273,51 +273,16 @@ export async function importLiveScene(
       results.push({ sceneNodeId: source.sceneNodeId, status: 'failed' });
     }
   }
-  // Geometry remains authoritative; Auto Layout is enabled only when children align with it.
+  // Geometry remains authoritative. Figma Auto Layout would recompute child
+  // positions using sizing rules that do not yet cover every CSS constraint.
   for (const source of scene.payload.nodes) {
-    const frame = created.get(source.sceneNodeId);
-    if (
-      frame?.type !== 'FRAME' ||
-      !source.layoutMode ||
-      source.layoutMode === 'NONE'
-    )
-      continue;
-    const children = frame.children;
-    const horizontal = source.layoutMode === 'HORIZONTAL';
-    const style = source.styles ?? {};
-    const mainStart = number(
-      style[horizontal ? 'padding-left' : 'padding-top'],
-    );
-    const crossStart = number(
-      style[horizontal ? 'padding-top' : 'padding-left'],
-    );
-    const gap = number(style.gap);
-    let cursor = mainStart;
-    const aligned =
-      children.length > 0 &&
-      children.every((child) => {
-        const fits =
-          Math.abs((horizontal ? child.x : child.y) - cursor) < 1 &&
-          Math.abs((horizontal ? child.y : child.x) - crossStart) < 1;
-        cursor += (horizontal ? child.width : child.height) + gap;
-        return fits;
-      });
-    if (aligned) {
-      frame.layoutMode = source.layoutMode;
-      frame.primaryAxisSizingMode = 'FIXED';
-      frame.counterAxisSizingMode = 'FIXED';
-      frame.paddingLeft = number(style['padding-left']);
-      frame.paddingRight = number(style['padding-right']);
-      frame.paddingTop = number(style['padding-top']);
-      frame.paddingBottom = number(style['padding-bottom']);
-      frame.itemSpacing = gap;
-    } else
+    if (source.layoutMode && source.layoutMode !== 'NONE')
       diagnostics.push({
         code: 'LAYOUT_GEOMETRY_FALLBACK',
         severity: 'warning',
         sourceNodeId: source.sourceNodeId,
         message:
-          'Auto Layout would change observed positions; preserved editable geometry.',
+          'CSS layout was preserved as measured editable geometry; Auto Layout was not enabled.',
       });
   }
   api.currentPage.selection = [wrapper];
