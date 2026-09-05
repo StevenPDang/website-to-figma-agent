@@ -5,8 +5,8 @@ import {
   MAX_WIRE_BYTES,
   parseLiveMessage,
   type Destination,
-  type ImportRequest,
-  type ImportResponse,
+  type CandidateRequest,
+  type CandidateResponse,
 } from '@website-to-figma/contracts';
 
 export interface ConnectionDescriptor {
@@ -29,7 +29,7 @@ export async function createLiveSession(
   let client: WebSocket | undefined;
   let identity: string | undefined;
   let destination: Destination | undefined;
-  let request: ImportRequest | undefined;
+  let request: CandidateRequest | undefined;
   let reconnects = 0;
   let completed = false;
   let resolveConnection: (value: Destination) => void = () => {};
@@ -39,9 +39,9 @@ export async function createLiveSession(
     rejectConnection = reject;
   });
   void connection.catch(() => {});
-  let resolveResult: (value: ImportResponse) => void = () => {};
+  let resolveResult: (value: CandidateResponse) => void = () => {};
   let rejectResult: (reason: Error) => void = () => {};
-  const result = new Promise<ImportResponse>((resolve, reject) => {
+  const result = new Promise<CandidateResponse>((resolve, reject) => {
     resolveResult = resolve;
     rejectResult = reject;
   });
@@ -128,8 +128,10 @@ export async function createLiveSession(
           rejectResult(new Error(message.message));
           return;
         }
-        if (message.type !== 'import-result' || !request || !destination)
+        if (message.type !== 'candidate-result' || !request || !destination)
           throw new Error('Unexpected message');
+        if (message.revision !== request.revision)
+          throw new Error('Revision mismatch');
         if (JSON.stringify(destination) !== JSON.stringify(message.destination))
           throw new Error('Destination mismatch');
         const expected = new Set(
@@ -168,8 +170,8 @@ export async function createLiveSession(
       return connection;
     },
     async importScene(
-      value: Omit<ImportRequest, 'destination'>,
-    ): Promise<ImportResponse> {
+      value: Omit<CandidateRequest, 'destination'>,
+    ): Promise<CandidateResponse> {
       if (request) throw new Error('Only one import per session');
       request = {
         ...value,

@@ -1,7 +1,8 @@
 import type { FigmaSceneArtifact, ImportResultArtifact } from './artifacts.js';
 import { validateArtifact } from './validation.js';
 
-export const LIVE_PROTOCOL_VERSION = '1.1.0' as const;
+export const LIVE_PROTOCOL_VERSION = '1.2.0' as const;
+export const MAX_CANDIDATE_REVISIONS = 3;
 export const MAX_WIRE_BYTES = 500 * 1024 * 1024;
 export interface Destination {
   documentName: string;
@@ -25,7 +26,8 @@ export type LiveMessage =
     })
   | (Base & { type: 'hello-ack'; accepted: true })
   | (Base & {
-      type: 'import-request';
+      type: 'candidate-request';
+      revision: number;
       scene: FigmaSceneArtifact;
       assets: WireAsset[];
       width: number;
@@ -33,14 +35,34 @@ export type LiveMessage =
       destination: Destination;
     })
   | (Base & {
-      type: 'import-result';
+      type: 'candidate-result';
+      revision: number;
       result: ImportResultArtifact;
       png: string;
       destination: Destination;
     })
-  | (Base & { type: 'error'; message: string });
-export type ImportRequest = Extract<LiveMessage, { type: 'import-request' }>;
-export type ImportResponse = Extract<LiveMessage, { type: 'import-result' }>;
+  | (Base & { type: 'finalize-request'; selectedRevision: number })
+  | (Base & { type: 'finalize-result'; selectedRevision: number })
+  | (Base & { type: 'cancel-request'; reason?: string })
+  | (Base & { type: 'cancel-result'; retainedRevision: number | null })
+  | (Base & {
+      type: 'error';
+      code: string;
+      message: string;
+      rebuildRequired?: boolean;
+    });
+export type CandidateRequest = Extract<
+  LiveMessage,
+  { type: 'candidate-request' }
+>;
+export type CandidateResponse = Extract<
+  LiveMessage,
+  { type: 'candidate-result' }
+>;
+/** @deprecated Use CandidateRequest. */
+export type ImportRequest = CandidateRequest;
+/** @deprecated Use CandidateResponse. */
+export type ImportResponse = CandidateResponse;
 
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value))
@@ -72,6 +94,14 @@ function base64(value: unknown, allowEmpty = false) {
   )
     throw new Error('Invalid base64 payload');
 }
+function revision(value: unknown): asserts value is number {
+  if (
+    !Number.isInteger(value) ||
+    (value as number) < 0 ||
+    (value as number) >= MAX_CANDIDATE_REVISIONS
+  )
+    throw new Error('Invalid candidate revision');
+}
 export function parseLiveMessage(input: unknown): LiveMessage {
   const m = object(input);
   if (
@@ -96,8 +126,17 @@ export function parseLiveMessage(input: unknown): LiveMessage {
       exact(m, [...base, 'accepted']);
       if (m.accepted !== true) throw new Error('Invalid acknowledgement');
       break;
-    case 'import-request': {
-      exact(m, [...base, 'scene', 'assets', 'width', 'height', 'destination']);
+    case 'candidate-request': {
+      exact(m, [
+        ...base,
+        'revision',
+        'scene',
+        'assets',
+        'width',
+        'height',
+        'destination',
+      ]);
+      revision(m.revision);
       destination(m.destination);
       const v = validateArtifact(m.scene);
       if (
@@ -137,8 +176,9 @@ export function parseLiveMessage(input: unknown): LiveMessage {
       assertSceneTree(v.value);
       break;
     }
-    case 'import-result': {
-      exact(m, [...base, 'result', 'png', 'destination']);
+    case 'candidate-result': {
+      exact(m, [...base, 'revision', 'result', 'png', 'destination']);
+      revision(m.revision);
       destination(m.destination);
       base64(m.png, true);
       const v = validateArtifact(m.result);
@@ -150,9 +190,34 @@ export function parseLiveMessage(input: unknown): LiveMessage {
         throw new Error('Invalid import result');
       break;
     }
+    case 'finalize-request':
+    case 'finalize-result':
+      exact(m, [...base, 'selectedRevision']);
+      revision(m.selectedRevision);
+      break;
+    case 'cancel-request':
+      exact(m, m.reason === undefined ? base : [...base, 'reason']);
+      if (m.reason !== undefined && !string(m.reason))
+        throw new Error('Invalid cancellation reason');
+      break;
+    case 'cancel-result':
+      exact(m, [...base, 'retainedRevision']);
+      if (m.retainedRevision !== null) revision(m.retainedRevision);
+      break;
     case 'error':
-      exact(m, [...base, 'message']);
-      if (!string(m.message)) throw new Error('Invalid error');
+      exact(
+        m,
+        m.rebuildRequired === undefined
+          ? [...base, 'code', 'message']
+          : [...base, 'code', 'message', 'rebuildRequired'],
+      );
+      if (
+        !string(m.code, 128) ||
+        !string(m.message) ||
+        (m.rebuildRequired !== undefined &&
+          typeof m.rebuildRequired !== 'boolean')
+      )
+        throw new Error('Invalid error');
       break;
     default:
       throw new Error('Unknown message type');

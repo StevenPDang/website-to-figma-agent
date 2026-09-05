@@ -2,17 +2,18 @@ import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 import { expect, it } from 'vitest';
 import type {
-  ImportRequest,
-  ImportResponse,
+  CandidateRequest,
+  CandidateResponse,
 } from '@website-to-figma/contracts';
 import {
   gradientPaint,
   importLiveScene,
   shadowEffect,
 } from './live-importer.js';
-const request: ImportRequest = {
-  protocolVersion: '1.1.0',
-  type: 'import-request',
+const request: CandidateRequest = {
+  protocolVersion: '1.2.0',
+  type: 'candidate-request',
+  revision: 0,
   runId: 'run:test',
   width: 200,
   height: 100,
@@ -202,6 +203,6 @@ it('runs the packaged controller without dynamic code generation and deduplicate
   ui.onmessage?.(request);
   ui.onmessage?.(request);
   await expect.poll(() => responses.length).toBe(2);
-  expect((responses[0] as ImportResponse).type).toBe('import-result');
+  expect((responses[0] as CandidateResponse).type).toBe('candidate-result');
   expect(nodes.filter((n) => n.type === 'TEXT')).toHaveLength(1);
 });

@@ -36,7 +36,7 @@ it('runs Chrome capture through authenticated result exchange and measured PNG Q
           socket?.send(
             JSON.stringify({
               type: 'hello',
-              protocolVersion: '1.1.0',
+              protocolVersion: '1.2.0',
               runId: descriptor.runId,
               authToken: descriptor.authToken,
               clientId: 'fixture-client',
@@ -57,16 +57,17 @@ it('runs Chrome capture through authenticated result exchange and measured PNG Q
                   : Buffer.from(raw as ArrayBuffer).toString(),
               ) as unknown,
             );
-            if (message.type !== 'import-request') return;
+            if (message.type !== 'candidate-request') return;
             // Synthetic peer: this tests orchestration/PNG QA, not Figma's renderer.
             const png = (
               await readFile(join(outputDir, 'reference.png'))
             ).toString('base64');
             socket?.send(
               JSON.stringify({
-                type: 'import-result',
-                protocolVersion: '1.1.0',
+                type: 'candidate-result',
+                protocolVersion: '1.2.0',
                 runId: descriptor.runId,
+                revision: message.revision,
                 destination: message.destination,
                 png,
                 result: {

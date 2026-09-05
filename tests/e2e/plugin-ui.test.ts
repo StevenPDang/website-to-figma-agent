@@ -30,7 +30,7 @@ it('connects the packaged browser UI and exchanges a validated request and respo
     pageId: 'page:1',
   };
   const fixture = await startFixtureServer(
-    `<script>window.addEventListener('message',event=>{const m=event.data.pluginMessage;if(m?.type==='destination')event.source.postMessage({pluginMessage:{type:'destination',destination:${JSON.stringify(destination)}}},'*');if(m?.type==='import-request')window.received=m;});</script><iframe title="Plugin" style="width:460px;height:370px" srcdoc="${html.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"></iframe>`,
+    `<script>window.addEventListener('message',event=>{const m=event.data.pluginMessage;if(m?.type==='destination')event.source.postMessage({pluginMessage:{type:'destination',destination:${JSON.stringify(destination)}}},'*');if(m?.type==='candidate-request')window.received=m;});</script><iframe title="Plugin" style="width:460px;height:370px" srcdoc="${html.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"></iframe>`,
   );
   const browser = await openBrowserSession({
     url: fixture.url,
@@ -79,9 +79,10 @@ it('connects the packaged browser UI and exchanges a validated request and respo
       },
     };
     const response = transport.importScene({
-      protocolVersion: '1.1.0',
+      protocolVersion: '1.2.0',
       runId: 'run:ui',
-      type: 'import-request',
+      type: 'candidate-request',
+      revision: 0,
       scene,
       assets: [],
       width: 10,
@@ -97,9 +98,10 @@ it('connects the packaged browser UI and exchanges a validated request and respo
         document.querySelector('iframe')?.contentWindow?.postMessage(
           {
             pluginMessage: {
-              protocolVersion: '1.1.0',
+              protocolVersion: '1.2.0',
               runId: 'run:ui',
-              type: 'import-result',
+              type: 'candidate-result',
+              revision: 0,
               destination,
               png: '',
               result: {

@@ -170,7 +170,8 @@ export async function runImport(options: ImportOptions) {
       try {
         if (!transport) throw new Error('Live session unavailable');
         const response = await transport.importScene({
-          type: 'import-request',
+          type: 'candidate-request',
+          revision: 0,
           protocolVersion: LIVE_PROTOCOL_VERSION,
           runId,
           scene,

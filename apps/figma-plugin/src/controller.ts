@@ -1,13 +1,13 @@
 import {
   parseLiveMessage,
-  type ImportResponse,
+  type CandidateResponse,
 } from '@website-to-figma/contracts';
 import { importLiveScene } from './live-importer.js';
 declare const __html__: string;
 figma.showUI(__html__, { width: 420, height: 330 });
 let activeRun: string | undefined;
 let fingerprint: string | undefined;
-let pending: Promise<ImportResponse> | undefined;
+let pending: Promise<CandidateResponse> | undefined;
 async function handleMessage(input: unknown) {
   try {
     if (
@@ -26,8 +26,8 @@ async function handleMessage(input: unknown) {
       return;
     }
     const message = parseLiveMessage(input);
-    if (message.type !== 'import-request')
-      throw new Error('Expected import request');
+    if (message.type !== 'candidate-request')
+      throw new Error('Expected candidate request');
     const serialized = JSON.stringify(message);
     if (
       activeRun &&

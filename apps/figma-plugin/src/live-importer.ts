@@ -1,7 +1,7 @@
 import {
   parseLiveMessage,
-  type ImportRequest,
-  type ImportResponse,
+  type CandidateRequest,
+  type CandidateResponse,
   type Diagnostic,
   type ImportedNodeResult,
 } from '@website-to-figma/contracts';
@@ -73,9 +73,9 @@ const number = (value: string | undefined, fallback = 0) => {
 
 export async function importLiveScene(
   api: PluginAPI,
-  request: ImportRequest,
+  request: CandidateRequest,
   bytesByHash: Map<string, Uint8Array>,
-): Promise<ImportResponse> {
+): Promise<CandidateResponse> {
   parseLiveMessage(request);
   if (
     api.currentPage.id !== request.destination.pageId ||
@@ -415,7 +415,8 @@ export async function importLiveScene(
   return {
     protocolVersion: request.protocolVersion,
     runId: request.runId,
-    type: 'import-result',
+    type: 'candidate-result',
+    revision: request.revision,
     destination: request.destination,
     png,
     result: {

@@ -54,7 +54,7 @@ function connect() {
         status.textContent = 'Connected. The CLI is capturing the page…';
         return;
       }
-      if (!authenticated || message.type !== 'import-request')
+      if (!authenticated || message.type !== 'candidate-request')
         throw new Error('Unexpected message');
       if (JSON.stringify(message.destination) !== JSON.stringify(destination))
         throw new Error('Destination mismatch');
@@ -154,6 +154,7 @@ window.onmessage = (event) => {
           type: 'error',
           protocolVersion: LIVE_PROTOCOL_VERSION,
           runId: descriptor.runId,
+          code: 'PLUGIN_IMPORT_FAILED',
           message,
         }),
       );
@@ -161,7 +162,7 @@ window.onmessage = (event) => {
   }
   try {
     const response = parseLiveMessage(value);
-    if (response.type !== 'import-result') return;
+    if (response.type !== 'candidate-result') return;
     finished = true;
     socket?.send(JSON.stringify(response));
     status.textContent = `Import ${response.result.payload.status}. See CLI for visual QA and reports.`;

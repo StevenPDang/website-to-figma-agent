@@ -4,7 +4,7 @@ import {
   LIVE_PROTOCOL_VERSION,
   parseLiveMessage,
   type FigmaSceneArtifact,
-  type ImportResponse,
+  type CandidateResponse,
 } from '@website-to-figma/contracts';
 import { createLiveSession } from './live-session.js';
 const destination = { documentName: 'Test', pageName: 'Page', pageId: '1:2' };
@@ -82,7 +82,8 @@ it('rejects an unauthenticated peer, reconnects the bound client and validates r
     });
     const result = session.importScene({
       protocolVersion: LIVE_PROTOCOL_VERSION,
-      type: 'import-request',
+      type: 'candidate-request',
+      revision: 0,
       runId: 'run:test',
       scene,
       assets: [],
@@ -114,16 +115,17 @@ it('rejects an unauthenticated peer, reconnects the bound client and validates r
                 : Buffer.from(raw).toString('utf8'),
           ) as unknown,
         );
-        if (message.type !== 'import-request') return;
+        if (message.type !== 'candidate-request') return;
         requests++;
         if (requests === 1) {
           socket.close();
           socket.once('close', connect);
           return;
         }
-        const response: ImportResponse = {
+        const response: CandidateResponse = {
           protocolVersion: LIVE_PROTOCOL_VERSION,
-          type: 'import-result',
+          type: 'candidate-result',
+          revision: message.revision,
           runId: 'run:test',
           destination,
           png: '',
