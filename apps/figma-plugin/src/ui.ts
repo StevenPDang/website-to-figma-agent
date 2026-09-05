@@ -170,6 +170,7 @@ window.onmessage = (event) => {
   try {
     const response = parseLiveMessage(value);
     if (response.type !== 'import-result') return;
+    finished = true;
     socket?.send(JSON.stringify(response));
     status.textContent = `Import ${response.result.payload.status}. See CLI for visual QA and reports.`;
   } catch {
