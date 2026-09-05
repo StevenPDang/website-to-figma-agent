@@ -12,3 +12,5 @@ export * from './semantic-names.js';
 export * from './responsive.js';
 export * from './agent-components.js';
 export * from './carousel.js';
+export * from './typography.js';
+export * from './fallback.js';

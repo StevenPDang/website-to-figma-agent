@@ -6,6 +6,7 @@ import type {
 } from '@website-to-figma/contracts';
 
 import type { AgentInferenceProposal } from './provider.js';
+import { isRasterFallbackEligible } from './fallback.js';
 
 export interface ProposalPolicyOptions {
   maxDecisions: number;
@@ -149,6 +150,17 @@ function validateDecision(
       candidate,
       'FORBIDDEN_RASTERIZATION',
       'Ordinary text and major sections must remain editable.',
+    );
+  }
+  if (
+    candidate.kind === 'fallback' &&
+    candidate.payload.representation === 'raster' &&
+    !candidate.sourceNodeIds.every((id) => isRasterFallbackEligible(ir, id))
+  ) {
+    return reject(
+      candidate,
+      'FALLBACK_TARGET_NOT_ELIGIBLE',
+      'Raster fallback requires captured unsupported media.',
     );
   }
   if (candidate.kind === 'carousel') {
