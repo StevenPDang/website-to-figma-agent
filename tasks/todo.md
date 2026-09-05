@@ -403,3 +403,382 @@
 - [x] Document plugin setup and update the domain skill's executable workflow.
 - [ ] Real Figma Desktop smoke test and approved visual acceptance thresholds.
 - [ ] Remaining advanced CSS/component mappings listed in docs/limitations.md.
+
+## Agentic Inference Milestone
+
+### Phase F: Agent Contracts and Provider Boundary
+
+### Task 18: Revise the inference artifact contract
+
+**Description:** Add a versioned, provider-neutral decision payload model for agent
+proposals, deterministic/agent provenance, rejected decisions, and merge outcomes while
+retaining validation support for existing deterministic inference artifacts.
+
+**Acceptance criteria:**
+
+- [ ] New decision kinds and payloads are closed, discriminated, and schema-valid.
+- [ ] Existing inference 1.0 fixtures still validate and new artifacts contain no provider-specific fields.
+- [ ] References, confidence, evidence, fallbacks, and merge provenance are validated.
+
+**Verification:**
+
+- [ ] Run `npm run validate:schemas` and focused contract/reference tests.
+- [ ] Run `npm run typecheck`.
+
+**Dependencies:** Approved agentic inference specification
+
+**Files likely touched:** `packages/contracts/src/artifacts.ts`, `packages/contracts/schemas/artifacts.schema.json`, `packages/contracts/src/artifacts.test.ts`, `packages/contracts/src/reference-validation.ts`, `packages/contracts/src/validation.ts`
+
+**Estimated scope:** Medium (5 files)
+
+### Task 19: Establish the provider-neutral inference interface
+
+**Description:** Define provider request/result types, build bounded sanitized requests
+from artifacts, and supply a deterministic fake provider for contract-level testing.
+
+**Acceptance criteria:**
+
+- [ ] Provider interfaces expose only domain inputs, proposals, diagnostics, and optional usage.
+- [ ] Request construction excludes secrets and partitions oversized pages by section.
+- [ ] A fake provider proves success, partial, and failure behavior without model access.
+
+**Verification:**
+
+- [ ] Run focused provider and request-builder tests.
+- [ ] Run `npm run typecheck`.
+
+**Dependencies:** Task 18
+
+**Files likely touched:** `packages/inference/src/provider.ts`, `packages/inference/src/agent-input.ts`, `packages/inference/src/provider.test.ts`, `packages/inference/src/agent-input.test.ts`, `packages/inference/src/index.ts`
+
+**Estimated scope:** Medium (5 files)
+
+### Task 20: Implement the local Codex provider
+
+**Description:** Invoke the locally authenticated Codex CLI without a shell using
+ephemeral read-only execution, stdin prompt framing, generated output schema, and
+bounded process resources.
+
+**Acceptance criteria:**
+
+- [ ] Arguments, working directory, prompt, schema, and output paths are isolated and deterministic.
+- [ ] Missing executable, timeout, oversized output, nonzero exit, and malformed JSON return structured failures.
+- [ ] Available token usage is normalized without persisting auth, sessions, or private configuration.
+
+**Verification:**
+
+- [ ] Run Codex-adapter tests against a fake executable.
+- [ ] Run an explicit local-Codex smoke command outside the ordinary test suite.
+
+**Dependencies:** Task 19
+
+**Files likely touched:** `packages/inference/src/codex-provider.ts`, `packages/inference/src/codex-provider.test.ts`, `packages/inference/src/codex-prompt.ts`, `packages/inference/src/codex-prompt.test.ts`
+
+**Estimated scope:** Medium (4 files)
+
+### Task 21: Validate and merge agent proposals
+
+**Description:** Enforce source identity, hierarchy, geometry, editability,
+rasterization, and budget policies, then merge valid proposal properties with the
+deterministic baseline while retaining rejection evidence.
+
+**Acceptance criteria:**
+
+- [ ] Unknown nodes, cycles, out-of-bounds geometry, unknown properties, and forbidden rasterization are rejected.
+- [ ] Valid decisions merge per property; invalid siblings fall back independently.
+- [ ] Merge output is deterministic and explains every accepted, rejected, and fallback choice.
+
+**Verification:**
+
+- [ ] Run proposal-policy and merge unit tests.
+- [ ] Validate merged inference artifacts with `npm run validate:schemas`.
+
+**Dependencies:** Tasks 18 and 19
+
+**Files likely touched:** `packages/inference/src/proposal.ts`, `packages/inference/src/proposal-policy.ts`, `packages/inference/src/proposal.test.ts`, `packages/inference/src/merge.ts`, `packages/inference/src/merge.test.ts`
+
+**Estimated scope:** Medium (5 files)
+
+### Checkpoint F
+
+- [ ] Existing deterministic imports remain byte-for-byte stable where contracts are unchanged.
+- [ ] Fake and Codex providers satisfy one interface; failures produce deterministic fallback.
+- [ ] Build, typecheck, lint, format, schema validation, and contract/inference tests pass.
+- [ ] Human reviews the provider boundary before domain decision work.
+
+### Phase G: Agentic Design-Intent Slices
+
+### Task 22: Infer layout, semantic names, and responsive intent
+
+**Description:** Accept and validate agent decisions for section roles, editable layout,
+stable layer names, and single-viewport responsive intent, then enforce geometry
+tolerances against captured bounds.
+
+**Acceptance criteria:**
+
+- [ ] Ambiguous row, column, wrap, grid, and overlay fixtures receive evidence-backed layouts.
+- [ ] Eligible layers receive stable role-based names with deterministic fallbacks.
+- [ ] Responsive constraints are labeled inferred and cannot claim multi-viewport validation.
+
+**Verification:**
+
+- [ ] Run layout/naming/responsive unit and fixture tests.
+- [ ] Run `npm run typecheck`.
+
+**Dependencies:** Task 21
+
+**Files likely touched:** `packages/inference/src/agent-layout.ts`, `packages/inference/src/semantic-names.ts`, `packages/inference/src/responsive.ts`, `packages/inference/src/agent-layout.test.ts`, `packages/inference/src/responsive.test.ts`
+
+**Estimated scope:** Medium (5 files)
+
+### Task 23: Discover components and interpret carousels
+
+**Description:** Combine deterministic fingerprints and agent evidence to produce
+conservative reusable components and unique ordered carousel panels without flattening
+or retaining proven loop clones.
+
+**Acceptance criteria:**
+
+- [ ] Repeated structures become components only when overrides preserve meaningful differences.
+- [ ] Carousel panels remain individually editable, ordered, and clipped to their viewport.
+- [ ] Unique visible content cannot be suppressed without structural and asset evidence.
+
+**Verification:**
+
+- [ ] Run component and carousel unit tests plus dedicated browser fixtures.
+- [ ] Inspect semantic scene invariants for editable panels and instances.
+
+**Dependencies:** Task 21
+
+**Files likely touched:** `packages/inference/src/agent-components.ts`, `packages/inference/src/carousel.ts`, `packages/inference/src/agent-components.test.ts`, `packages/inference/src/carousel.test.ts`, `tests/fixtures/sites/agent-carousel/index.html`
+
+**Estimated scope:** Medium (5 files)
+
+### Task 24: Match typography and select scoped fallbacks
+
+**Description:** Validate font substitution and metric-compensation decisions using
+captured line geometry, and constrain raster fallback decisions to eligible unsupported
+media roots.
+
+**Acceptance criteria:**
+
+- [ ] Typography fixtures preserve expected lines and avoid overlap with unavailable fonts.
+- [ ] Requested font intent and chosen substitute remain traceable.
+- [ ] Ordinary text, full pages, and major sections are rejected as raster fallbacks.
+
+**Verification:**
+
+- [ ] Run typography/fallback unit and fixture tests.
+- [ ] Run editability invariant tests.
+
+**Dependencies:** Task 21
+
+**Files likely touched:** `packages/inference/src/typography.ts`, `packages/inference/src/fallback.ts`, `packages/inference/src/typography.test.ts`, `packages/inference/src/fallback.test.ts`, `tests/fixtures/sites/agent-typography/index.html`
+
+**Estimated scope:** Medium (5 files)
+
+### Task 25: Classify structural QA and rank candidates
+
+**Description:** Localize image differences, attach relevant source nodes, distinguish
+structural defects from rendering noise, and rank candidate results without allowing
+aggregate metrics to hide editability failures.
+
+**Acceptance criteria:**
+
+- [ ] Seeded missing assets, overlaps, clipping, ordering, and geometry drift are classified correctly.
+- [ ] Antialiasing-only and known font-rasterization noise receive lower priority.
+- [ ] Candidate ranking rejects structural regressions before comparing pixel scores.
+
+**Verification:**
+
+- [ ] Run visual-QA classification and ranking tests with deterministic image pairs.
+- [ ] Validate source-linked discrepancy regions.
+
+**Dependencies:** Task 18
+
+**Files likely touched:** `packages/visual-qa/src/classify.ts`, `packages/visual-qa/src/rank.ts`, `packages/visual-qa/src/classify.test.ts`, `packages/visual-qa/src/rank.test.ts`, `packages/visual-qa/src/index.ts`
+
+**Estimated scope:** Medium (5 files)
+
+### Task 26: Compile enriched inference into editable scenes
+
+**Description:** Apply accepted layout, naming, component, carousel, typography,
+responsive, visibility, and fallback decisions when compiling a validated Figma Scene.
+
+**Acceptance criteria:**
+
+- [ ] Every accepted decision has a deterministic scene effect or an explicit unsupported diagnostic.
+- [ ] Components, instances, constraints, clipping, and names preserve source traceability.
+- [ ] Rejected/absent decisions produce the existing editable deterministic scene.
+
+**Verification:**
+
+- [ ] Run scene compiler tests for every new decision family.
+- [ ] Validate deterministic fallback and schema-valid output.
+
+**Dependencies:** Tasks 22–24
+
+**Files likely touched:** `packages/figma-scene/src/compile.ts`, `packages/figma-scene/src/agent-decisions.ts`, `packages/figma-scene/src/agent-decisions.test.ts`, `packages/figma-scene/src/compile.test.ts`
+
+**Estimated scope:** Medium (4 files)
+
+### Checkpoint G
+
+- [ ] Ambiguous fixtures demonstrate every approved inference capability.
+- [ ] Carousel, text, component, and fallback editability invariants pass.
+- [ ] Deterministic mode has no behavioral regression.
+- [ ] Build, typecheck, lint, format, schema, inference, scene, and QA tests pass.
+
+### Phase H: Iterative Candidate Rendering
+
+### Task 27: Define the candidate-render protocol
+
+**Description:** Replace the single-result live flow with versioned candidate,
+render-result, finalization, and cancellation messages carrying bounded monotonic
+revisions and explicit compatibility errors.
+
+**Acceptance criteria:**
+
+- [ ] Protocol schemas reject invalid versions, runs, revisions, destinations, and message order.
+- [ ] Same-revision retries are idempotent and conflicting revisions are rejected.
+- [ ] Older plugins receive a clear rebuild/reload instruction before mutation.
+
+**Verification:**
+
+- [ ] Run protocol schema, parser, state-machine, and compatibility tests.
+- [ ] Run `npm run validate:schemas`.
+
+**Dependencies:** Task 18
+
+**Files likely touched:** `packages/contracts/src/live-protocol.ts`, `packages/contracts/schemas/protocol.schema.json`, `packages/contracts/src/live-protocol.test.ts`, `packages/contracts/src/protocol-state.ts`, `packages/contracts/src/protocol.test.ts`
+
+**Estimated scope:** Medium (5 files)
+
+### Task 28: Manage plugin-owned candidate revisions
+
+**Description:** Import, replace, export, select, and clean up candidate frames using
+run/revision ownership metadata while protecting all pre-existing and user-created layers.
+
+**Acceptance criteria:**
+
+- [ ] Each complete revision exports once and a retry returns the cached result.
+- [ ] Finalization retains only the selected complete revision.
+- [ ] Cancellation/disconnect preserves the last complete candidate and never alters user-owned nodes.
+
+**Verification:**
+
+- [ ] Run plugin adapter lifecycle, ownership, retry, and failure tests.
+- [ ] Package the plugin and run the controller harness.
+
+**Dependencies:** Tasks 26 and 27
+
+**Files likely touched:** `apps/figma-plugin/src/candidate-manager.ts`, `apps/figma-plugin/src/candidate-manager.test.ts`, `apps/figma-plugin/src/controller.ts`, `apps/figma-plugin/src/live-importer.ts`, `apps/figma-plugin/src/live-importer.test.ts`
+
+**Estimated scope:** Medium (5 files)
+
+### Task 29: Exchange multiple revisions over live transport
+
+**Description:** Extend the authenticated session to send bounded candidate revisions,
+receive render results, finalize selection, and retain reconnect/idempotency guarantees.
+
+**Acceptance criteria:**
+
+- [ ] One authenticated connection exchanges up to three ordered candidate revisions.
+- [ ] Retry, disconnect, timeout, cancellation, and stale-result behavior are deterministic.
+- [ ] The last complete candidate remains recoverable after interruption.
+
+**Verification:**
+
+- [ ] Run transport unit and integration tests with synthetic peers.
+- [ ] Run plugin UI end-to-end transport tests.
+
+**Dependencies:** Tasks 27 and 28
+
+**Files likely touched:** `packages/transport/src/live-session.ts`, `packages/transport/src/live-session.test.ts`, `apps/figma-plugin/src/ui.ts`, `tests/integration/live-pipeline.test.ts`, `tests/e2e/plugin-ui.test.ts`
+
+**Estimated scope:** Medium (5 files)
+
+### Task 30: Implement the bounded correction loop
+
+**Description:** Orchestrate proposal, compilation, candidate rendering, QA,
+re-proposal, ranking, and finalization with a three-render cap and complete history.
+
+**Acceptance criteria:**
+
+- [ ] The loop stops on pass, no improvement, invalid output, provider failure, or exhausted budget.
+- [ ] The best structurally valid candidate is selected rather than merely the last candidate.
+- [ ] Every pass records inputs, accepted/rejected decisions, diagnostics, metrics, usage, and stop reason.
+
+**Verification:**
+
+- [ ] Run correction-state and fake-provider end-to-end tests.
+- [ ] Verify timeout and failure paths retain the best candidate.
+
+**Dependencies:** Tasks 20, 21, 25, 26, and 29
+
+**Files likely touched:** `packages/inference/src/correction-loop.ts`, `packages/inference/src/correction-loop.test.ts`, `packages/inference/src/candidate-history.ts`, `packages/inference/src/candidate-history.test.ts`
+
+**Estimated scope:** Medium (4 files)
+
+### Checkpoint H
+
+- [ ] Fake-provider end-to-end flow completes three revisions and selects the expected candidate.
+- [ ] Protocol, transport, plugin ownership, retry, disconnect, and cleanup tests pass.
+- [ ] Coverage, integration, end-to-end, and plugin packaging commands pass.
+- [ ] Human reviews the iterative mutation behavior before CLI rollout.
+
+### Phase I: Deployable Frontend-Development Workflow
+
+### Task 31: Integrate agentic mode into the CLI and reports
+
+**Description:** Add mode/provider/budget parsing, provider construction, correction
+orchestration, progress output, artifact persistence, usage reporting, and actionable
+fallback diagnostics to the existing import command.
+
+**Acceptance criteria:**
+
+- [ ] Agentic and deterministic modes follow documented behavior and share capture safety limits.
+- [ ] Connection, capture, inference, candidate, correction, and finalization progress is human-readable.
+- [ ] Partial/failure runs retain valid artifacts, best candidate, correction history, and recovery guidance.
+
+**Verification:**
+
+- [ ] Run CLI parser, pipeline, report, integration, and failure-path tests.
+- [ ] Run a capture-only agentic fixture with the fake provider.
+
+**Dependencies:** Task 30
+
+**Files likely touched:** `apps/cli/src/index.ts`, `apps/cli/src/pipeline.ts`, `apps/cli/src/agentic-options.ts`, `apps/cli/src/run-report.ts`, `apps/cli/src/pipeline.test.ts`
+
+**Estimated scope:** Medium (5 files)
+
+### Task 32: Prove, document, and enable the agentic workflow
+
+**Description:** Complete fixture acceptance, explicit local-Codex and real-Figma
+smoke procedures, frontend-developer documentation, limitations, and the guarded
+switch to agentic-by-default after all gates pass.
+
+**Acceptance criteria:**
+
+- [ ] Approved fixtures meet structural, editability, traceability, coverage, and visual thresholds.
+- [ ] Local Codex and real Figma smoke runs are recorded, including human visual QA and usage.
+- [ ] Fresh setup documentation covers plugin reload, authentication, modes, budgets, artifacts, and recovery.
+
+**Verification:**
+
+- [ ] Run every documented root verification command and record results.
+- [ ] Run the public-site smoke test and complete the release checklist.
+
+**Dependencies:** Task 31 and Checkpoint H
+
+**Files likely touched:** `tests/e2e/agentic-import.test.ts`, `docs/getting-started.md`, `docs/limitations.md`, `docs/smoke-test.md`, `skills/website-to-figma/SKILL.md`
+
+**Estimated scope:** Medium (5 files)
+
+### Checkpoint I: Agentic Inference Complete
+
+- [ ] All 15 agentic milestone success criteria pass.
+- [ ] Required package coverage is at least 80% line and branch coverage.
+- [ ] Deterministic mode remains available and verified.
+- [ ] Real Figma Desktop and public-site human QA are recorded.
+- [ ] Human approves making agentic mode the default.

@@ -217,13 +217,12 @@ The MVP is complete when all of the following are demonstrated on the approved f
 
 None for MVP planning. New questions discovered during implementation must update this specification before changing scope or architecture.
 
-## Agentic Inference Milestone — Phase 1 Draft
+## Agentic Inference Milestone — Approved Specification
 
 ### Status and Approval Gate
 
-This section specifies the next milestone and is awaiting human review. Do not
-update `tasks/plan.md`, update `tasks/todo.md`, change stable schemas or protocols,
-or implement this milestone until this section is approved.
+Approved by the user on 2026-09-05. Planning is authorized; implementation remains
+gated on approval of the Phase 2 plan and task decomposition.
 
 Approval of this section explicitly approves:
 
@@ -567,8 +566,8 @@ The milestone is complete when all of the following are demonstrated:
 ### Open Questions
 
 None. The provider-neutral adapter, local Codex implementation, staged rollout, three-render
-limit, deterministic fallback, schema revision, and candidate-render protocol are proposed for
-approval as one milestone. Discoveries that change these contracts return to this gate.
+limit, deterministic fallback, schema revision, and candidate-render protocol were approved as
+one milestone. Discoveries that change these contracts return to this gate.
 
 ## Approved Live Integration
 
