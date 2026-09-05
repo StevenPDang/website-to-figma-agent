@@ -46,12 +46,32 @@ process.stdin.on('end', () => {
   const outputPath = args[outputIndex + 1];
   if (request.runId === 'run:hang') return setTimeout(() => {}, 60000);
   if (request.runId === 'run:nonzero') return process.exit(7);
+  if (request.runId === 'run:stderr') {
+    process.stderr.write('provider failed');
+    return process.exit(8);
+  }
+  if (request.runId === 'run:event-error') {
+    process.stdout.write(JSON.stringify({ error: { message: 'nested failure' } }) + '\\n');
+    return process.exit(9);
+  }
   if (request.runId === 'run:oversized') {
     process.stdout.write('x'.repeat(10000));
     return;
   }
-  fs.writeFileSync(outputPath, request.runId === 'run:malformed' ? '{bad' : JSON.stringify({ decisions: [] }));
-  process.stdout.write(JSON.stringify({ type: 'turn.completed', usage: { input_tokens: 12, output_tokens: 3 } }) + '\\n');
+  const proposal = request.runId === 'run:invalid-root'
+    ? { decisions: [], extra: true }
+    : { decisions: [] };
+  const output = request.runId === 'run:malformed'
+    ? '{bad'
+    : request.runId === 'run:file-oversized'
+      ? 'x'.repeat(5000)
+      : JSON.stringify(proposal);
+  fs.writeFileSync(outputPath, output);
+  if (request.runId === 'run:no-usage') return;
+  const usage = request.runId === 'run:input-only'
+    ? { input_tokens: 12 }
+    : { input_tokens: 12, output_tokens: 3 };
+  process.stdout.write('diagnostic line\\n' + JSON.stringify({ type: 'turn.completed', nested: { usage } }) + '\\n');
 });
 `,
     'utf8',
@@ -99,8 +119,12 @@ describe('createCodexInferenceProvider', () => {
 
   it.each([
     ['run:nonzero', 'CODEX_EXIT_FAILED'],
+    ['run:stderr', 'CODEX_EXIT_FAILED'],
+    ['run:event-error', 'CODEX_EXIT_FAILED'],
     ['run:malformed', 'CODEX_INVALID_OUTPUT'],
+    ['run:invalid-root', 'CODEX_INVALID_OUTPUT'],
     ['run:oversized', 'CODEX_OUTPUT_TOO_LARGE'],
+    ['run:file-oversized', 'CODEX_OUTPUT_TOO_LARGE'],
   ])('returns %s as a structured failure', async (runId, code) => {
     const result = await provider().infer({ ...request, runId });
     expect(result.ok).toBe(false);
@@ -125,5 +149,26 @@ describe('createCodexInferenceProvider', () => {
     }).infer(request);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.diagnostic.code).toBe('CODEX_NOT_FOUND');
+  });
+
+  it('omits unavailable usage fields', async () => {
+    await expect(
+      provider().infer({ ...request, runId: 'run:no-usage' }),
+    ).resolves.toEqual({ ok: true, proposal: { decisions: [] } });
+    await expect(
+      provider().infer({ ...request, runId: 'run:input-only' }),
+    ).resolves.toEqual({
+      ok: true,
+      proposal: { decisions: [] },
+      usage: { inputTokens: 12 },
+    });
+  });
+
+  it('reports other spawn failures', async () => {
+    const blocked = join(directory, 'blocked');
+    await writeFile(blocked, 'not executable', { mode: 0o644 });
+    const result = await provider({ executable: blocked }).infer(request);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.diagnostic.code).toBe('CODEX_PROCESS_FAILED');
   });
 });

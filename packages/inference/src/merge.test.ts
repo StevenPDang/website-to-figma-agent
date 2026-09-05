@@ -68,6 +68,17 @@ const deterministic: InferenceArtifact = {
 };
 
 describe('mergeAgentInference', () => {
+  it('rejects artifacts from another run', () => {
+    expect(() =>
+      mergeAgentInference(
+        ir,
+        { ...deterministic, runId: 'run:other' },
+        { decisions: [] },
+        { maxDecisions: 5 },
+      ),
+    ).toThrow('run IDs must match');
+  });
+
   it('merges valid decisions per kind and falls invalid siblings back independently', () => {
     const result = mergeAgentInference(
       ir,
@@ -172,6 +183,81 @@ describe('mergeAgentInference', () => {
         decisionId: 'decision:name-low',
         code: 'AGENT_DECISION_CONFLICT',
       }),
+    );
+  });
+
+  it('uses decision ID as the stable tie breaker and rejects ID collisions', () => {
+    const result = mergeAgentInference(
+      ir,
+      deterministic,
+      {
+        decisions: [
+          {
+            decisionId: 'decision:z-name',
+            sourceNodeIds: ['source:text'],
+            kind: 'semantic-name',
+            confidence: 0.8,
+            evidence: ['candidate'],
+            fallback: 'geometry',
+            origin: 'agent',
+            payload: { name: 'Zed' },
+          },
+          {
+            decisionId: 'decision:a-name',
+            sourceNodeIds: ['source:text'],
+            kind: 'semantic-name',
+            confidence: 0.8,
+            evidence: ['candidate'],
+            fallback: 'geometry',
+            origin: 'agent',
+            payload: { name: 'Alpha' },
+          },
+          {
+            decisionId: 'decision:layout:root',
+            sourceNodeIds: ['source:text'],
+            kind: 'semantic-name',
+            confidence: 0.9,
+            evidence: ['collision'],
+            fallback: 'geometry',
+            origin: 'agent',
+            payload: { name: 'Collision' },
+          },
+        ],
+      },
+      { maxDecisions: 5 },
+    );
+    expect(result.payload.decisions.map((item) => item.decisionId)).toContain(
+      'decision:a-name',
+    );
+    expect(result.payload.rejectedDecisions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          decisionId: 'decision:z-name',
+          code: 'AGENT_DECISION_CONFLICT',
+        }),
+        expect.objectContaining({
+          decisionId: 'decision:layout:root',
+          code: 'DUPLICATE_DECISION_ID',
+        }),
+      ]),
+    );
+  });
+
+  it('reads deterministic decisions from an enriched artifact', () => {
+    const enriched = mergeAgentInference(
+      ir,
+      deterministic,
+      { decisions: [] },
+      { maxDecisions: 5 },
+    );
+    const repeated = mergeAgentInference(
+      ir,
+      enriched,
+      { decisions: [] },
+      { maxDecisions: 5 },
+    );
+    expect(repeated.payload.deterministicDecisions).toEqual(
+      deterministic.payload.decisions,
     );
   });
 });

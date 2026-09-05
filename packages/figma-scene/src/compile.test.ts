@@ -109,3 +109,89 @@ it('preserves shape kinds and valid geometry while omitting invisible leaves', (
   expect(scene.payload.nodes[1]?.opacity).toBeUndefined();
   expect(scene.payload.nodes[0]?.childNodeIds).toEqual(['scene:1']);
 });
+
+it('maps visual styles, shape kinds, and deterministic flex direction', () => {
+  const input = structuredClone(ir);
+  input.payload.rootNodeId = 'ir:frame';
+  input.payload.sourceNodeIds = [
+    'dom:frame',
+    'dom:svg',
+    'dom:image',
+    'dom:rectangle',
+    'dom:group',
+  ];
+  input.payload.nodes = [
+    {
+      nodeId: 'ir:frame',
+      sourceNodeId: 'dom:frame',
+      parentNodeId: null,
+      childNodeIds: ['ir:svg', 'ir:image', 'ir:rectangle', 'ir:group'],
+      kind: 'frame',
+      rect: { x: 0, y: 0, width: 800, height: 600 },
+      styles: {
+        display: 'flex',
+        opacity: '0.5',
+        'border-radius': '12',
+        'background-color': '#fff',
+        'box-shadow': '0 2px 4px #0004',
+      },
+    },
+    ...(['svg', 'image', 'rectangle', 'group'] as const).map((kind) => ({
+      nodeId: `ir:${kind}`,
+      sourceNodeId: `dom:${kind}`,
+      parentNodeId: 'ir:frame',
+      childNodeIds: [],
+      kind,
+    })),
+  ];
+  const inference = {
+    ...input,
+    artifactKind: 'inference' as const,
+    payload: {
+      sourceNodeIds: input.payload.sourceNodeIds,
+      decisions: [
+        {
+          decisionId: 'decision:flex',
+          sourceNodeIds: ['dom:frame'],
+          kind: 'layout' as const,
+          confidence: 1,
+          evidence: ['display=flex', 'flex-direction=column'],
+          fallback: 'geometry' as const,
+        },
+      ],
+    },
+  };
+  const scene = compileScene(input, inference);
+  expect(scene.payload.nodes.map((node) => node.kind)).toEqual([
+    'frame',
+    'svg',
+    'image',
+    'rectangle',
+    'group',
+  ]);
+  expect(scene.payload.nodes[0]).toMatchObject({
+    layoutMode: 'VERTICAL',
+    fills: ['#fff'],
+    opacity: 0.5,
+    cornerRadius: 12,
+    effects: ['0 2px 4px #0004'],
+  });
+
+  const frame = input.payload.nodes[0];
+  const layoutDecision = inference.payload.decisions[0];
+  if (frame === undefined || layoutDecision === undefined) {
+    throw new Error('Missing flex fixture.');
+  }
+  frame.styles = {
+    display: 'inline-flex',
+    'background-color': 'rgba(0, 0, 0, 0)',
+    'box-shadow': 'none',
+  };
+  layoutDecision.evidence = ['display=inline-flex'];
+  expect(compileScene(input, inference).payload.nodes[0]).toMatchObject({
+    layoutMode: 'HORIZONTAL',
+  });
+  expect(
+    compileScene(input, inference).payload.nodes[0]?.fills,
+  ).toBeUndefined();
+});

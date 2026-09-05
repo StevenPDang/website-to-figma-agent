@@ -298,4 +298,137 @@ describe('agentic scene compilation', () => {
     expect(compileScene(ir)).toEqual(compileScene(ir, undefined));
     expect(compileScene(ir).payload.diagnostics).toBeUndefined();
   });
+
+  it('records unsupported agent effects without changing editable fallback nodes', () => {
+    const decisions: AgenticInferenceDecision[] = [
+      {
+        ...base,
+        decisionId: 'decision:bad-component',
+        sourceNodeIds: ['source:a'],
+        kind: 'component',
+        payload: {
+          name: 'Card',
+          instanceSourceNodeIds: ['source:a'],
+          overrideSourceNodeIds: [],
+        },
+      },
+      {
+        ...base,
+        decisionId: 'decision:bad-type',
+        sourceNodeIds: ['source:root'],
+        kind: 'typography',
+        payload: { substituteFamily: 'Inter', preserveLineCount: true },
+      },
+      {
+        ...base,
+        decisionId: 'decision:bad-fallback',
+        sourceNodeIds: ['source:a'],
+        kind: 'fallback',
+        payload: { representation: 'raster', reason: 'Not media' },
+      },
+      {
+        ...base,
+        decisionId: 'decision:token',
+        sourceNodeIds: ['source:root'],
+        kind: 'token',
+        payload: { tokenType: 'color', name: 'Surface', value: '#fff' },
+      },
+      {
+        ...base,
+        decisionId: 'decision:section',
+        sourceNodeIds: ['source:root'],
+        kind: 'section',
+        payload: { role: 'gallery' },
+      },
+    ];
+    const scene = compileScene(ir, inference(decisions));
+    expect(
+      scene.payload.nodes.find((node) => node.sourceNodeId === 'source:a')
+        ?.kind,
+    ).toBe('frame');
+    expect(
+      scene.payload.nodes.find((node) => node.sourceNodeId === 'source:root')
+        ?.name,
+    ).toBe('Gallery');
+    expect(scene.payload.diagnostics?.map((item) => item.code)).toEqual([
+      'COMPONENT_REQUIRES_REPETITION',
+      'TYPOGRAPHY_TARGET_NOT_TEXT',
+      'FALLBACK_TARGET_NOT_ELIGIBLE',
+      'INFERENCE_DECISION_DEFERRED',
+    ]);
+  });
+
+  it('keeps invalid layout and carousel proposals as warnings', () => {
+    const outOfBoundsIr = structuredClone(ir);
+    const secondCard = outOfBoundsIr.payload.nodes.find(
+      (node) => node.sourceNodeId === 'source:b',
+    );
+    if (secondCard?.rect === undefined)
+      throw new Error('Missing card fixture.');
+    secondCard.rect.x = 900;
+    const decisions: AgenticInferenceDecision[] = [
+      {
+        ...base,
+        decisionId: 'decision:bad-layout',
+        sourceNodeIds: ['source:root'],
+        kind: 'layout',
+        payload: { mode: 'horizontal', gap: 10 },
+      },
+      {
+        ...base,
+        decisionId: 'decision:bad-carousel',
+        sourceNodeIds: ['source:root'],
+        kind: 'carousel',
+        payload: {
+          viewportSourceNodeId: 'source:root',
+          panelSourceNodeIds: ['source:a'],
+          cloneSourceNodeIds: ['source:b'],
+          clipContent: true,
+        },
+      },
+    ];
+    expect(
+      compileScene(
+        outOfBoundsIr,
+        inference(decisions),
+      ).payload.diagnostics?.map((item) => item.code),
+    ).toEqual(['LAYOUT_BOUNDS_EXCEEDED', 'CAROUSEL_CLONE_NOT_PROVEN']);
+  });
+
+  it('applies optional typography metrics and editable fallback without changing kind', () => {
+    const decisions: AgenticInferenceDecision[] = [
+      {
+        ...base,
+        decisionId: 'decision:type-metrics',
+        sourceNodeIds: ['source:a-text'],
+        kind: 'typography',
+        payload: {
+          requestedFamily: 'Missing',
+          substituteFamily: 'Inter',
+          weight: 400,
+          style: 'normal',
+          lineHeight: 30,
+          letterSpacing: 1.5,
+          preserveLineCount: false,
+        },
+      },
+      {
+        ...base,
+        decisionId: 'decision:editable',
+        sourceNodeIds: ['source:media'],
+        kind: 'fallback',
+        payload: { representation: 'editable', reason: 'Keep layers' },
+      },
+    ];
+    const scene = compileScene(ir, inference(decisions));
+    expect(
+      scene.payload.nodes.find((node) => node.sourceNodeId === 'source:a-text'),
+    ).toMatchObject({
+      styles: { 'line-height': '30px', 'letter-spacing': '1.5px' },
+      typography: { preserveLineCount: false },
+    });
+    expect(
+      scene.payload.nodes.find((node) => node.sourceNodeId === 'source:media'),
+    ).toMatchObject({ kind: 'image', fallbackRepresentation: 'editable' });
+  });
 });

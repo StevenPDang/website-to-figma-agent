@@ -77,6 +77,7 @@ function decision(
 
 describe('validateProposalPolicy', () => {
   it.each([
+    [decision({ origin: 'deterministic' }), 'INVALID_ORIGIN'],
     [decision({ sourceNodeIds: ['source:missing'] }), 'UNKNOWN_SOURCE_NODE'],
     [
       decision({
@@ -100,6 +101,25 @@ describe('validateProposalPolicy', () => {
         payload: { representation: 'raster', reason: 'large' },
       }),
       'FORBIDDEN_RASTERIZATION',
+    ],
+    [
+      decision({
+        kind: 'layout',
+        payload: { mode: 'vertical', gap: Number.POSITIVE_INFINITY },
+      }),
+      'GEOMETRY_OUT_OF_BOUNDS',
+    ],
+    [
+      decision({
+        kind: 'responsive',
+        payload: {
+          horizontal: 'fill',
+          vertical: 'hug',
+          minWidth: 900,
+          maxWidth: 400,
+        },
+      }),
+      'GEOMETRY_OUT_OF_BOUNDS',
     ],
   ])('rejects unsafe proposal decisions independently', (candidate, code) => {
     const result = validateProposalPolicy({ decisions: [candidate] }, ir, {
@@ -167,5 +187,47 @@ describe('validateProposalPolicy', () => {
       'HIERARCHY_CYCLE',
       'BUDGET_EXCEEDED',
     ]);
+  });
+
+  it('deduplicates duplicate IDs and validates embedded component references', () => {
+    const duplicate = decision();
+    const result = validateProposalPolicy(
+      {
+        decisions: [
+          duplicate,
+          duplicate,
+          decision({
+            decisionId: 'decision:component',
+            kind: 'component',
+            payload: {
+              name: 'Card',
+              instanceSourceNodeIds: ['source:card', 'source:missing'],
+              overrideSourceNodeIds: [],
+            },
+          }),
+        ],
+      },
+      ir,
+      { maxDecisions: 5 },
+    );
+    expect(result.proposedDecisions).toEqual([
+      expect.objectContaining({ decisionId: 'decision:component' }),
+    ]);
+    expect(result.rejectedDecisions.map((item) => item.code)).toEqual([
+      'DUPLICATE_DECISION_ID',
+      'UNKNOWN_SOURCE_NODE',
+    ]);
+  });
+
+  it('allows editable fallback representations', () => {
+    const candidate = decision({
+      kind: 'fallback',
+      payload: { representation: 'editable', reason: 'Preserve editability' },
+    });
+    expect(
+      validateProposalPolicy({ decisions: [candidate] }, ir, {
+        maxDecisions: 1,
+      }).acceptedDecisions,
+    ).toEqual([candidate]);
   });
 });
