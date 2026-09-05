@@ -302,3 +302,28 @@ it('cancels while retaining the peer-reported last complete revision', async () 
     await session.close();
   }
 });
+
+it('times out one active lifecycle operation and rejects concurrent work', async () => {
+  const session = await createLiveSession('run:test', 30);
+  const socket = new WebSocket(session.descriptor.url);
+  try {
+    socket.on('open', () => {
+      socket.send(
+        JSON.stringify({
+          type: 'hello',
+          protocolVersion: LIVE_PROTOCOL_VERSION,
+          runId: 'run:test',
+          authToken: session.descriptor.authToken,
+          clientId: 'timeout-client',
+          destination,
+        }),
+      );
+    });
+    await session.waitForConnection();
+    const pending = session.cancel();
+    await expect(session.finalize(0)).rejects.toThrow('operation is active');
+    await expect(pending).rejects.toThrow('Timed out waiting');
+  } finally {
+    await session.close();
+  }
+});
