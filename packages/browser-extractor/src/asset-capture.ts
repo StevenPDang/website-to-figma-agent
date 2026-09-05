@@ -24,6 +24,33 @@ interface DiscoveredAsset {
   height: number;
 }
 
+async function convertRasterToPng(
+  page: Page,
+  bytes: Buffer,
+  mimeType: string,
+): Promise<Buffer> {
+  if (!/^image\/(?:webp|avif)$/i.test(mimeType)) return bytes;
+  const base64 = bytes.toString('base64');
+  const encoded = await page.evaluate(
+    async ({ base64: input, mime }) => {
+      const image = new Image();
+      image.src = `data:${mime};base64,${input}`;
+      await image.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Canvas 2D context unavailable');
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, 0, 0);
+      return canvas.toDataURL('image/png').split(',')[1] ?? '';
+    },
+    { base64, mime: mimeType },
+  );
+  if (!encoded) throw new Error('Raster conversion returned no data');
+  return Buffer.from(encoded, 'base64');
+}
+
 const discoverAssets = () => {
   const result: DiscoveredAsset[] = [];
   const walk = (node: Node, path: string) => {
@@ -105,6 +132,10 @@ export async function captureAssets(
           response.headers()['content-type']?.split(';')[0] ?? mimeType;
         bytes = await response.body();
       }
+      const originalMimeType = mimeType;
+      bytes = await convertRasterToPng(page, bytes, originalMimeType);
+      if (/image\/(?:webp|avif)/i.test(originalMimeType))
+        mimeType = 'image/png';
       if (bytes.byteLength + totalBytes > maxBytes) {
         diagnostics.push({
           code: 'ASSET_TOO_LARGE',

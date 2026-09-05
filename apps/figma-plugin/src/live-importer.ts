@@ -43,6 +43,7 @@ export async function importLiveScene(
   const results: ImportedNodeResult[] = [];
   const sources = new Map(scene.payload.nodes.map((n) => [n.sceneNodeId, n]));
   const created = new Map<string, SceneNode>();
+  const sceneIdByNode = new Map<SceneNode, string>();
   const assets = new Map(scene.payload.assets.map((a) => [a.sourceNodeId, a]));
   const available = await api.listAvailableFontsAsync();
   const loaded = new Set<string>();
@@ -210,6 +211,7 @@ export async function importLiveScene(
       let parent = source.parentNodeId
         ? created.get(source.parentNodeId)
         : undefined;
+      if (styles.position === 'fixed') parent = wrapper;
       if (!parent || !('appendChild' in parent)) parent = wrapper;
       (parent as FrameNode).appendChild(node);
       const parentSource = source.parentNodeId
@@ -257,6 +259,7 @@ export async function importLiveScene(
           'Italic style requires an available matching face.',
         );
       created.set(source.sceneNodeId, node);
+      sceneIdByNode.set(node, source.sceneNodeId);
       results.push({
         sceneNodeId: source.sceneNodeId,
         figmaNodeId: node.id,
@@ -283,6 +286,29 @@ export async function importLiveScene(
         sourceNodeId: source.sourceNodeId,
         message:
           'CSS layout was preserved as measured editable geometry; Auto Layout was not enabled.',
+      });
+  }
+  // CSS stacking can differ from DOM order. Reorder only explicit numeric
+  // z-index children; auto layers retain their source order.
+  for (const source of scene.payload.nodes) {
+    const frame = created.get(source.sceneNodeId);
+    if (frame?.type !== 'FRAME') continue;
+    const ordered = frame.children
+      .map((child, index) => ({
+        child,
+        index,
+        z:
+          Number.parseInt(
+            sources.get(sceneIdByNode.get(child) ?? '')?.styles?.['z-index'] ??
+              '0',
+            10,
+          ) || 0,
+      }))
+      .sort((a, b) => a.z - b.z || a.index - b.index);
+    const insertChild = Reflect.get(frame, 'insertChild');
+    if (typeof insertChild === 'function')
+      ordered.forEach((entry, index) => {
+        insertChild.call(frame, index, entry.child);
       });
   }
   api.currentPage.selection = [wrapper];

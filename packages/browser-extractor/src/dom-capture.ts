@@ -20,6 +20,7 @@ const captureInPage = (maxNodes: number) => {
   const stylesToCapture = [
     'display',
     'position',
+    'z-index',
     'color',
     'background-color',
     'font-family',
