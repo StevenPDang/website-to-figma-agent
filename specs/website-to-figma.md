@@ -230,10 +230,11 @@ replays an interrupted import into a new plugin instance.
 
 The CLI defaults to live import; `--capture-only` explicitly prepares artifacts
 without connecting. It prints a short-lived connection descriptor for pasting into
-the plugin; no token is persisted. Plugin results and PNGs are checked against the
-run identity and exact scene membership. Captured full-page dimensions define the
-export frame. Missing plugins, substitutions, unsupported features, and QA failure
-produce a non-success exit status with retained artifacts.
+the plugin, then waits for an authenticated plugin connection before navigating to
+or capturing the source page; no token is persisted. Plugin results and PNGs are
+checked against the run identity and exact scene membership. Captured full-page
+dimensions define the export frame. Missing plugins, substitutions, unsupported
+features, and QA failure produce a non-success exit status with retained artifacts.
 
 Use pinned esbuild for an IIFE plugin bundle, official Figma TypeScript declarations
 for runtime API checking, and pngjs for PNG decoding. JSON Schema validators used

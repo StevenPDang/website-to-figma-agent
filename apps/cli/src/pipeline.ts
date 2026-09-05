@@ -60,6 +60,7 @@ export async function runImport(options: ImportOptions) {
         options.pluginPort ?? 3847,
       );
       options.onConnection?.(transport.descriptor);
+      await transport.waitForConnection();
     }
     session = await openBrowserSession({
       url: options.url,

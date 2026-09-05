@@ -20,7 +20,7 @@ if (command !== 'import' || !url) {
     pluginTimeoutMs: seconds * 1000,
     onConnection: (descriptor) => {
       console.error(
-        'Open the Website to Figma development plugin in your destination page. Paste this short-lived connection JSON:',
+        'Open the Website to Figma development plugin in your destination page. Paste this short-lived connection JSON; capture will wait until the plugin connects:',
       );
       console.error(JSON.stringify(descriptor));
     },

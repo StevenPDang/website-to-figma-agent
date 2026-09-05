@@ -32,6 +32,13 @@ export async function createLiveSession(
   let request: ImportRequest | undefined;
   let reconnects = 0;
   let completed = false;
+  let resolveConnection: (value: Destination) => void = () => {};
+  let rejectConnection: (reason: Error) => void = () => {};
+  const connection = new Promise<Destination>((resolve, reject) => {
+    resolveConnection = resolve;
+    rejectConnection = reject;
+  });
+  void connection.catch(() => {});
   let resolveResult: (value: ImportResponse) => void = () => {};
   let rejectResult: (reason: Error) => void = () => {};
   const result = new Promise<ImportResponse>((resolve, reject) => {
@@ -40,9 +47,12 @@ export async function createLiveSession(
   });
   // Consumers may attach after capture has finished.
   void result.catch(() => {});
-  const timer = setTimeout(() => {
-    rejectResult(new Error('Timed out waiting for Figma plugin import'));
+  const connectionTimer = setTimeout(() => {
+    rejectConnection(
+      new Error('Timed out waiting for Figma plugin connection'),
+    );
   }, timeoutMs);
+  let importTimer: ReturnType<typeof setTimeout> | undefined;
   const sendRequest = () => {
     if (client?.readyState === WebSocket.OPEN && request && destination) {
       client.send(JSON.stringify({ ...request, destination }));
@@ -93,9 +103,11 @@ export async function createLiveSession(
             throw new Error('Destination changed');
           authenticated = true;
           clearTimeout(authTimer);
+          clearTimeout(connectionTimer);
           identity = message.clientId;
           destination = message.destination;
           client = socket;
+          resolveConnection(message.destination);
           if (request) {
             request = { ...request, destination: message.destination };
           }
@@ -112,6 +124,7 @@ export async function createLiveSession(
         }
         if (socket !== client) throw new Error('Inactive client');
         if (message.type === 'error') {
+          if (importTimer) clearTimeout(importTimer);
           rejectResult(new Error(message.message));
           return;
         }
@@ -131,7 +144,7 @@ export async function createLiveSession(
         )
           throw new Error('Result membership mismatch');
         completed = true;
-        clearTimeout(timer);
+        if (importTimer) clearTimeout(importTimer);
         resolveResult(message);
         socket.close(1000, 'Import received');
       } catch {
@@ -142,7 +155,7 @@ export async function createLiveSession(
   await new Promise<void>((resolve, reject) => {
     server.once('listening', resolve);
     server.once('error', (error) => {
-      clearTimeout(timer);
+      clearTimeout(connectionTimer);
       reject(error);
     });
   });
@@ -151,6 +164,9 @@ export async function createLiveSession(
     throw new Error('No loopback port');
   return {
     descriptor: { url: `ws://localhost:${address.port}`, authToken, runId },
+    async waitForConnection(): Promise<Destination> {
+      return connection;
+    },
     async importScene(
       value: Omit<ImportRequest, 'destination'>,
     ): Promise<ImportResponse> {
@@ -166,11 +182,16 @@ export async function createLiveSession(
       parseLiveMessage(request);
       if (Buffer.byteLength(JSON.stringify(request)) > MAX_WIRE_BYTES)
         throw new Error('Wire payload limit exceeded');
+      importTimer = setTimeout(() => {
+        rejectResult(new Error('Timed out waiting for Figma plugin import'));
+      }, timeoutMs);
       sendRequest();
       return result;
     },
     async close() {
-      clearTimeout(timer);
+      clearTimeout(connectionTimer);
+      if (importTimer) clearTimeout(importTimer);
+      rejectConnection(new Error('Session closed'));
       rejectResult(new Error('Session closed'));
       for (const socket of server.clients) socket.terminate();
       await new Promise<void>((resolve, reject) => {

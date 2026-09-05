@@ -32,6 +32,33 @@ const scene: FigmaSceneArtifact = {
     ],
   },
 };
+it('waits for an authenticated plugin connection before resolving', async () => {
+  const session = await createLiveSession('run:test', 3000);
+  let connected = false;
+  const waiting = session.waitForConnection().then((value) => {
+    connected = true;
+    return value;
+  });
+  try {
+    const socket = new WebSocket(session.descriptor.url);
+    await new Promise<void>((resolve) => socket.once('open', resolve));
+    await Promise.resolve();
+    expect(connected).toBe(false);
+    socket.send(
+      JSON.stringify({
+        type: 'hello',
+        protocolVersion: LIVE_PROTOCOL_VERSION,
+        runId: 'run:test',
+        authToken: session.descriptor.authToken,
+        clientId: 'waiting-client',
+        destination,
+      }),
+    );
+    await expect(waiting).resolves.toEqual(destination);
+  } finally {
+    await session.close();
+  }
+});
 it('rejects an unauthenticated peer, reconnects the bound client and validates results', async () => {
   const session = await createLiveSession('run:test', 3000);
   try {
@@ -130,17 +157,9 @@ it('rejects an unauthenticated peer, reconnects the bound client and validates r
 it('bounds waiting when no plugin connects', async () => {
   const session = await createLiveSession('run:test', 20);
   try {
-    await expect(
-      session.importScene({
-        protocolVersion: LIVE_PROTOCOL_VERSION,
-        type: 'import-request',
-        runId: 'run:test',
-        scene,
-        assets: [],
-        width: 100,
-        height: 100,
-      }),
-    ).rejects.toThrow('Timed out');
+    await expect(session.waitForConnection()).rejects.toThrow(
+      'Timed out waiting for Figma plugin connection',
+    );
   } finally {
     await session.close();
   }

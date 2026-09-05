@@ -18,6 +18,7 @@ it('runs Chrome capture through authenticated result exchange and measured PNG Q
   const outputDir = await mkdtemp(join(tmpdir(), 'live-figma-'));
   let socket: WebSocket | undefined;
   let connectionCreatedBeforeCapture = false;
+  let connectionAttempted = false;
   try {
     const result = await runImport({
       url: fixture.url,
@@ -31,6 +32,7 @@ it('runs Chrome capture through authenticated result exchange and measured PNG Q
         );
         socket = new WebSocket(descriptor.url);
         socket.on('open', () => {
+          connectionAttempted = true;
           socket?.send(
             JSON.stringify({
               type: 'hello',
@@ -90,6 +92,7 @@ it('runs Chrome capture through authenticated result exchange and measured PNG Q
       },
     });
     expect(connectionCreatedBeforeCapture).toBe(true);
+    expect(connectionAttempted).toBe(true);
     expect(result.status).toBe('success');
     expect(result.metrics).toEqual({ ssim: 1, changedPixelRatio: 0 });
     for (const name of [
