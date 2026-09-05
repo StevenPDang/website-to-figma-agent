@@ -23,6 +23,7 @@ import {
 import { normalizeRawCapture } from '@website-to-figma/website-ir';
 import { inferLayout } from '@website-to-figma/inference';
 import { compileScene } from '@website-to-figma/figma-scene';
+import { formatRunReport } from './run-report.js';
 
 export interface ImportOptions {
   url: string;
@@ -39,6 +40,7 @@ export async function runImport(options: ImportOptions) {
   const viewport = options.viewport ?? { width: 1440, height: 900 };
   const outputDir = options.outputDir ?? `.artifacts/${runId.slice(4)}`;
   await mkdir(`${outputDir}/assets`, { recursive: true });
+  await mkdir('.artifacts', { recursive: true });
   const persist = async (artifact: Artifact) => {
     const validation = validateArtifact(artifact);
     if (!validation.ok) throw new Error(JSON.stringify(validation.issues));
@@ -89,8 +91,24 @@ export async function runImport(options: ImportOptions) {
     await persist(inference);
     const scene = compileScene(ir, inference);
     await persist(scene);
+    const fallbackSources = new Set(
+      media.assets
+        .filter((asset) => asset.kind === 'image')
+        .map((asset) => asset.sourceNodeId),
+    );
+    const captureDiagnostics = captured.diagnostics.map((diagnostic) =>
+      diagnostic.code === 'UNSUPPORTED_MEDIA' &&
+      diagnostic.sourceNodeId &&
+      fallbackSources.has(diagnostic.sourceNodeId)
+        ? {
+            ...diagnostic,
+            code: 'MEDIA_RASTER_FALLBACK',
+            message: 'Media represented by a captured raster fallback.',
+          }
+        : diagnostic,
+    );
     const diagnostics: Diagnostic[] = [
-      ...captured.diagnostics,
+      ...captureDiagnostics,
       ...media.diagnostics,
       ...screenshot.diagnostics,
     ];
@@ -209,6 +227,25 @@ export async function runImport(options: ImportOptions) {
       !diagnostics.length
         ? ('success' as const)
         : ('partial' as const);
+    const summary = {
+      created: result.payload.nodes.filter((n) => n.status === 'created')
+        .length,
+      skipped: result.payload.nodes.filter((n) => n.status === 'skipped')
+        .length,
+      failed: result.payload.nodes.filter((n) => n.status === 'failed').length,
+      assets: raw.payload.assets.length,
+    };
+    const report = formatRunReport({
+      runId,
+      sourceUrl: raw.sourceUrl,
+      outputDir,
+      status,
+      counts: summary,
+      diagnostics,
+      metrics: qa.payload.metrics,
+    });
+    await writeFile(`${outputDir}/run-report.md`, report);
+    await writeFile('.artifacts/latest-run.md', report);
     return {
       runId,
       status,
@@ -216,15 +253,7 @@ export async function runImport(options: ImportOptions) {
       destination,
       diagnostics,
       metrics: qa.payload.metrics,
-      counts: {
-        created: result.payload.nodes.filter((n) => n.status === 'created')
-          .length,
-        skipped: result.payload.nodes.filter((n) => n.status === 'skipped')
-          .length,
-        failed: result.payload.nodes.filter((n) => n.status === 'failed')
-          .length,
-        assets: raw.payload.assets.length,
-      },
+      counts: summary,
     };
   } finally {
     await session.close();

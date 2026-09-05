@@ -22,6 +22,50 @@ export function solidPaint(css: string | undefined): SolidPaint | undefined {
     opacity: m[4] === undefined ? 1 : Number(m[4]),
   };
 }
+export function gradientPaint(
+  css: string | undefined,
+): GradientPaint | undefined {
+  if (!css?.startsWith('linear-gradient(')) return;
+  const colors = [...css.matchAll(/rgba?\([^)]*\)/g)]
+    .map((match) => solidPaint(match[0]))
+    .filter(Boolean) as SolidPaint[];
+  if (colors.length < 2) return;
+  const angle = Number(
+    css.match(/linear-gradient\(\s*([\d.]+)deg/)?.[1] ?? 180,
+  );
+  const radians = ((angle - 90) * Math.PI) / 180;
+  return {
+    type: 'GRADIENT_LINEAR',
+    gradientTransform: [
+      [Math.cos(radians), -Math.sin(radians), 0.5],
+      [Math.sin(radians), Math.cos(radians), 0.5],
+    ],
+    gradientStops: colors.map((paint, index) => ({
+      position: index / (colors.length - 1),
+      color: { ...paint.color, a: paint.opacity ?? 1 },
+    })),
+  };
+}
+export function shadowEffect(
+  css: string | undefined,
+): DropShadowEffect | undefined {
+  if (!css || css === 'none' || css.includes('inset')) return;
+  const colorMatch = css.match(/rgba?\([^)]*\)/);
+  const values = [
+    ...css.replace(colorMatch?.[0] ?? '', '').matchAll(/-?[\d.]+px/g),
+  ].map((m) => Number.parseFloat(m[0]));
+  const color = solidPaint(colorMatch?.[0]);
+  if (values.length < 3 || !color) return;
+  return {
+    type: 'DROP_SHADOW',
+    color: { ...color.color, a: color.opacity ?? 1 },
+    offset: { x: values[0] ?? 0, y: values[1] ?? 0 },
+    radius: Math.max(0, values[2] ?? 0),
+    spread: values[3] ?? 0,
+    visible: true,
+    blendMode: 'NORMAL',
+  };
+}
 const number = (value: string | undefined, fallback = 0) => {
   const n = Number.parseFloat(value ?? '');
   return Number.isFinite(n) ? n : fallback;
@@ -98,7 +142,7 @@ export async function importLiveScene(
             ?.trim()
             .replace(/["']/g, '') ?? 'Inter';
         const weight = number(styles['font-weight'], 400);
-        const desired =
+        const weightStyle =
           weight >= 700
             ? 'Bold'
             : weight >= 600
@@ -106,20 +150,32 @@ export async function importLiveScene(
               : weight >= 500
                 ? 'Medium'
                 : 'Regular';
+        const italic = styles['font-style'] === 'italic';
+        const desired = italic
+          ? weightStyle === 'Regular'
+            ? 'Italic'
+            : `${weightStyle} Italic`
+          : weightStyle;
         let font = available.find(
           (f) => f.fontName.family === family && f.fontName.style === desired,
         )?.fontName;
+        // Preserve the requested face characteristics when the website family
+        // is unavailable by selecting a common Figma family with the same style.
+        font ??= available.find(
+          (f) => f.fontName.family === 'Inter' && f.fontName.style === desired,
+        )?.fontName;
         font ??= available.find((f) => f.fontName.family === family)?.fontName;
         if (!font) {
-          font = { family: 'Inter', style: 'Regular' };
+          font = available.find((f) => f.fontName.family === 'Inter')
+            ?.fontName ?? { family: 'Inter', style: 'Regular' };
           warn(
             'FONT_SUBSTITUTED',
-            `${family} ${desired} unavailable; using Inter Regular.`,
+            `${family} ${desired} unavailable; using ${font.family} ${font.style}.`,
           );
-        } else if (font.style !== desired)
+        } else if (font.family !== family || font.style !== desired)
           warn(
             'FONT_STYLE_SUBSTITUTED',
-            `${family} ${desired} unavailable; using ${font.style}.`,
+            `${family} ${desired} unavailable; using ${font.family} ${font.style}.`,
           );
         const key = JSON.stringify(font);
         if (!loaded.has(key)) {
@@ -164,7 +220,11 @@ export async function importLiveScene(
           text.textAlignHorizontal = 'RIGHT';
         if (styles['text-decoration-line']?.includes('underline'))
           text.textDecoration = 'UNDERLINE';
-      } else if (source.kind === 'svg') {
+      } else if (
+        source.kind === 'svg' ||
+        (source.kind === 'image' &&
+          assets.get(source.sourceNodeId)?.mimeType === 'image/svg+xml')
+      ) {
         const asset = assets.get(source.sourceNodeId);
         const bytes = asset?.contentHash
           ? bytesByHash.get(asset.contentHash)
@@ -227,7 +287,8 @@ export async function importLiveScene(
         'fills' in node
       ) {
         const fill = solidPaint(styles['background-color']);
-        node.fills = fill ? [fill] : [];
+        const gradient = gradientPaint(styles['background-image']);
+        node.fills = gradient ? [gradient] : fill ? [fill] : [];
       }
       if (source.kind !== 'text' && 'opacity' in node)
         node.opacity = Math.max(0, Math.min(1, source.opacity ?? 1));
@@ -241,19 +302,35 @@ export async function importLiveScene(
           node.strokeAlign = 'INSIDE';
         }
       }
-      if (styles['background-image'] && styles['background-image'] !== 'none')
+      if (
+        styles['background-image'] &&
+        styles['background-image'] !== 'none' &&
+        !gradientPaint(styles['background-image'])
+      )
         warn(
           'BACKGROUND_UNSUPPORTED',
-          'CSS background images/gradients require additional mapping.',
+          'CSS background image could not be mapped.',
         );
       if (styles.transform && styles.transform !== 'none')
         warn(
           'TRANSFORM_GEOMETRY_FALLBACK',
           'Transform represented by its rendered bounding box.',
         );
-      if (source.effects?.length)
-        warn('SHADOW_UNSUPPORTED', 'CSS shadow was not mapped.');
-      if (source.kind === 'text' && styles['font-style'] === 'italic')
+      if (source.effects?.length && 'effects' in node) {
+        const effect = shadowEffect(source.effects[0]);
+        if (effect) node.effects = [effect];
+        else warn('SHADOW_UNSUPPORTED', 'CSS shadow could not be parsed.');
+      }
+      if (
+        source.kind === 'text' &&
+        styles['font-style'] === 'italic' &&
+        !(
+          'fontName' in node &&
+          typeof node.fontName === 'object' &&
+          'style' in node.fontName &&
+          node.fontName.style.includes('Italic')
+        )
+      )
         warn(
           'FONT_STYLE_UNSUPPORTED',
           'Italic style requires an available matching face.',

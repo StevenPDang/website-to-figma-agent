@@ -26,6 +26,8 @@ if (command !== 'import' || !url) {
     },
   })
     .then((result) => {
+      console.error(`Human-readable report: ${result.outputDir}/run-report.md`);
+      console.error('Latest report: .artifacts/latest-run.md');
       console.log(JSON.stringify(result));
       process.exitCode = result.status === 'success' ? 0 : 2;
     })

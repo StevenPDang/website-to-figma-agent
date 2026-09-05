@@ -5,7 +5,11 @@ import type {
   ImportRequest,
   ImportResponse,
 } from '@website-to-figma/contracts';
-import { importLiveScene } from './live-importer.js';
+import {
+  gradientPaint,
+  importLiveScene,
+  shadowEffect,
+} from './live-importer.js';
 const request: ImportRequest = {
   protocolVersion: '1.1.0',
   type: 'import-request',
@@ -127,6 +131,20 @@ it('creates editable text with parent-relative geometry and source identity', as
   expect(text?.characters).toBe('Editable');
   expect(text?.x).toBe(12);
   expect(text?.data.get('sourceNodeId')).toBe('dom:1');
+});
+
+it('maps CSS gradients and shadows to Figma paints and effects', () => {
+  const gradient = gradientPaint(
+    'linear-gradient(90deg, rgb(0, 0, 0), rgba(255, 255, 255, 0.5))',
+  );
+  expect(gradient?.type).toBe('GRADIENT_LINEAR');
+  expect(gradient?.gradientStops).toHaveLength(2);
+  const shadow = shadowEffect('rgba(0, 0, 0, 0.2) 0px 4px 12px 0px');
+  expect(shadow).toMatchObject({
+    type: 'DROP_SHADOW',
+    offset: { x: 0, y: 4 },
+    radius: 12,
+  });
 });
 it('rejects cyclic or incompatible scenes before creating nodes', async () => {
   const { api, nodes } = harness();

@@ -20,9 +20,12 @@ interface DiscoveredAsset {
   kind: 'image' | 'svg';
   url?: string;
   markup?: string;
+  elementScreenshotId?: string;
   width: number;
   height: number;
 }
+
+const screenshotMarker = 'data-website-to-figma-capture';
 
 async function convertRasterToPng(
   page: Page,
@@ -53,6 +56,7 @@ async function convertRasterToPng(
 
 const discoverAssets = () => {
   const result: DiscoveredAsset[] = [];
+  const marker = 'data-website-to-figma-capture';
   const walk = (node: Node, path: string) => {
     if (node.nodeType !== Node.ELEMENT_NODE) return;
     const element = node as Element;
@@ -66,6 +70,63 @@ const discoverAssets = () => {
         width: image.naturalWidth || rect.width,
         height: image.naturalHeight || rect.height,
       });
+    } else if (element.tagName.toLowerCase() === 'video') {
+      const video = element as HTMLVideoElement;
+      let captured = false;
+      if (video.poster) {
+        result.push({
+          sourceNodeId: `dom:${path}`,
+          kind: 'image',
+          url: video.poster,
+          width: rect.width,
+          height: rect.height,
+        });
+        captured = true;
+      } else if (video.readyState >= 2 && video.videoWidth > 0) {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const context = canvas.getContext('2d');
+          context?.drawImage(video, 0, 0);
+          const dataUrl = canvas.toDataURL('image/png');
+          if (dataUrl !== 'data:,')
+            result.push({
+              sourceNodeId: `dom:${path}`,
+              kind: 'image',
+              url: dataUrl,
+              width: rect.width,
+              height: rect.height,
+            });
+          captured = dataUrl !== 'data:,';
+        } catch {
+          // Cross-origin media remains an explicitly unsupported fallback.
+        }
+      }
+      if (!captured) {
+        element.setAttribute(marker, path);
+        result.push({
+          sourceNodeId: `dom:${path}`,
+          kind: 'image',
+          elementScreenshotId: path,
+          width: rect.width,
+          height: rect.height,
+        });
+      }
+    } else if (element.tagName.toLowerCase() === 'canvas') {
+      try {
+        const dataUrl = (element as HTMLCanvasElement).toDataURL('image/png');
+        if (dataUrl !== 'data:,')
+          result.push({
+            sourceNodeId: `dom:${path}`,
+            kind: 'image',
+            url: dataUrl,
+            width: rect.width,
+            height: rect.height,
+          });
+      } catch {
+        // A cross-origin canvas is intentionally left as an unsupported media diagnostic.
+      }
     } else if (element.tagName.toLowerCase() === 'svg') {
       result.push({
         sourceNodeId: `dom:${path}`,
@@ -86,10 +147,37 @@ const discoverAssets = () => {
   return result;
 };
 
+const waitForMediaFrames = async (page: Page) => {
+  await page.evaluate(async () => {
+    const videos = [...document.querySelectorAll('video')];
+    await Promise.race([
+      Promise.all(
+        videos.map((video) =>
+          video.readyState >= 2
+            ? Promise.resolve()
+            : new Promise<void>((resolve) => {
+                video.addEventListener(
+                  'loadeddata',
+                  () => {
+                    resolve();
+                  },
+                  {
+                    once: true,
+                  },
+                );
+              }),
+        ),
+      ),
+      new Promise<void>((resolve) => setTimeout(resolve, 3000)),
+    ]);
+  });
+};
+
 export async function captureAssets(
   page: Page,
   options: AssetCaptureOptions = {},
 ): Promise<AssetCaptureResult> {
+  await waitForMediaFrames(page);
   const discovered = await page.evaluate(discoverAssets);
   const maxBytes = options.maxAssetBytes ?? 500 * 1024 * 1024;
   const assets: CapturedAsset[] = [];
@@ -111,6 +199,14 @@ export async function captureAssets(
       let mimeType =
         item.kind === 'svg' ? 'image/svg+xml' : 'application/octet-stream';
       if (item.kind === 'svg') bytes = Buffer.from(item.markup ?? '', 'utf8');
+      else if (item.elementScreenshotId) {
+        bytes = await page
+          .locator(
+            `[${screenshotMarker}="${item.elementScreenshotId}"]`,
+          )
+          .screenshot({ type: 'png' });
+        mimeType = 'image/png';
+      }
       else if (item.url?.startsWith('data:')) {
         const match = item.url.match(/^data:([^;,]+)?(;base64)?,(.*)$/s);
         if (!match) throw new Error('Invalid data URL');
@@ -179,5 +275,10 @@ export async function captureAssets(
       });
     }
   }
+  await page.evaluate((marker) => {
+    document.querySelectorAll(`[${marker}]`).forEach((element) => {
+      element.removeAttribute(marker);
+    });
+  }, screenshotMarker);
   return { assets, diagnostics };
 }

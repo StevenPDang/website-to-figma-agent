@@ -42,4 +42,32 @@ describe('asset capture', () => {
       await fixture.close();
     }
   }, 20_000);
+
+  it('captures a rendered video element when no poster or readable frame exists', async () => {
+    const fixture = await startFixtureServer(
+      '<video style="display:block;width:160px;height:90px;background:rgb(12,34,56)"></video>',
+    );
+    const session = await openBrowserSession({
+      url: fixture.url,
+      viewport: { width: 800, height: 600 },
+      allowLoopback: true,
+    });
+    try {
+      const dom = await captureDom(session.page);
+      const video = dom.nodes.find((node) => node.tagName === 'video');
+      const result = await captureAssets(session.page);
+      expect(result.assets).toContainEqual(
+        expect.objectContaining({
+          sourceNodeId: video?.sourceNodeId,
+          kind: 'image',
+          mimeType: 'image/png',
+          width: 160,
+          height: 90,
+        }),
+      );
+    } finally {
+      await session.close();
+      await fixture.close();
+    }
+  }, 20_000);
 });

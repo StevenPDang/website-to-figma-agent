@@ -7,11 +7,21 @@ import type {
 export function normalizeRawCapture(
   raw: RawCaptureArtifact,
 ): WebsiteIrArtifact {
+  const rasterFallbacks = new Set(
+    raw.payload.assets
+      .filter((asset) => asset.kind === 'image')
+      .map((asset) => asset.sourceNodeId),
+  );
   const nodes: WebsiteIrNode[] = raw.payload.nodes.map((source) => {
     const tag = source.tagName ?? '';
     let kind: WebsiteIrNode['kind'] = source.kind === 'text' ? 'text' : 'group';
     if (source.kind === 'element') {
       if (tag === 'img') kind = 'image';
+      else if (
+        (tag === 'video' || tag === 'canvas') &&
+        rasterFallbacks.has(source.sourceNodeId)
+      )
+        kind = 'image';
       else if (tag === 'svg') kind = 'svg';
       else if (tag === 'ellipse' || tag === 'circle') kind = 'ellipse';
       else if (
