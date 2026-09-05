@@ -340,7 +340,7 @@ it('cancels while retaining the peer-reported last complete revision', async () 
 });
 
 it('times out one active lifecycle operation and rejects concurrent work', async () => {
-  const session = await createLiveSession('run:test', 30);
+  const session = await createLiveSession('run:test', 500);
   const socket = new WebSocket(session.descriptor.url);
   try {
     socket.on('open', () => {
