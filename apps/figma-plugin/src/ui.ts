@@ -8,13 +8,25 @@ const form = document.querySelector('form') as HTMLFormElement;
 const input = document.querySelector('textarea') as HTMLTextAreaElement;
 const status = document.querySelector('[role=status]') as HTMLElement;
 const button = document.querySelector('button') as HTMLButtonElement;
+window.onerror = (_message, _source, _line, _column, error) => {
+  status.textContent = `Plugin UI error: ${error?.message ?? 'unknown error'}`;
+  button.disabled = false;
+  return true;
+};
+window.addEventListener('unhandledrejection', (event) => {
+  status.textContent = `Plugin error: ${event.reason instanceof Error ? event.reason.message : 'unexpected failure'}`;
+  button.disabled = false;
+});
 let destination: Destination | undefined;
 let socket: WebSocket | undefined;
 let descriptor: { url: string; runId: string; authToken: string } | undefined;
 let retries = 0;
 let authenticated = false;
 let finished = false;
-const clientId = crypto.randomUUID();
+const clientId =
+  typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `client-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 parent.postMessage({ pluginMessage: { type: 'destination' } }, '*');
 function connect() {
   if (!descriptor || !destination) return;
@@ -47,13 +59,16 @@ function connect() {
       if (JSON.stringify(message.destination) !== JSON.stringify(destination))
         throw new Error('Destination mismatch');
       status.textContent = 'Checking assets and importing editable layers…';
+      const subtle = Reflect.get(crypto, 'subtle') as SubtleCrypto | undefined;
+      if (!subtle)
+        throw new Error(
+          'This Figma runtime does not provide secure hashing. Reload the plugin.',
+        );
       for (const asset of message.assets) {
         const bytes = Uint8Array.from(atob(asset.base64), (c) =>
           c.charCodeAt(0),
         );
-        const digest = new Uint8Array(
-          await crypto.subtle.digest('SHA-256', bytes),
-        );
+        const digest = new Uint8Array(await subtle.digest('SHA-256', bytes));
         const hash = Array.from(digest, (b) =>
           b.toString(16).padStart(2, '0'),
         ).join('');
@@ -127,7 +142,6 @@ function parseDescriptorText(text: string): unknown {
   }
 }
 window.onmessage = (event) => {
-  if (event.source !== parent) return;
   const envelope = event.data as { pluginMessage?: unknown };
   const value = envelope.pluginMessage;
   if (!value || typeof value !== 'object') return;
