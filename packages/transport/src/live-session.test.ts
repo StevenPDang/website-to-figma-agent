@@ -59,6 +59,42 @@ it('waits for an authenticated plugin connection before resolving', async () => 
     await session.close();
   }
 });
+it('instructs an older plugin to rebuild and reload before mutation', async () => {
+  const session = await createLiveSession('run:test', 3000);
+  try {
+    const socket = new WebSocket(session.descriptor.url);
+    const response = await new Promise<Record<string, unknown>>((resolve) => {
+      socket.on('open', () => {
+        socket.send(
+          JSON.stringify({
+            type: 'hello',
+            protocolVersion: '1.1.0',
+            runId: 'run:test',
+            authToken: session.descriptor.authToken,
+            clientId: 'old-client',
+            destination,
+          }),
+        );
+      });
+      socket.on('message', (raw) => {
+        resolve(
+          JSON.parse(Buffer.from(raw as ArrayBuffer).toString()) as Record<
+            string,
+            unknown
+          >,
+        );
+      });
+    });
+    expect(response).toMatchObject({
+      protocolVersion: '1.1.0',
+      type: 'error',
+      message:
+        'Plugin protocol is incompatible. Rebuild and reload the plugin.',
+    });
+  } finally {
+    await session.close();
+  }
+});
 it('rejects an unauthenticated peer, reconnects the bound client and validates results', async () => {
   const session = await createLiveSession('run:test', 3000);
   try {

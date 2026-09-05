@@ -102,6 +102,25 @@ export async function createLiveSession(
               ? Buffer.concat(raw).toString('utf8')
               : Buffer.from(raw).toString('utf8'),
         );
+        const candidateVersion =
+          typeof input === 'object' && input !== null
+            ? (input as Record<string, unknown>).protocolVersion
+            : undefined;
+        if (candidateVersion !== LIVE_PROTOCOL_VERSION) {
+          socket.send(
+            JSON.stringify({
+              protocolVersion: candidateVersion,
+              runId,
+              type: 'error',
+              message:
+                'Plugin protocol is incompatible. Rebuild and reload the plugin.',
+            }),
+            () => {
+              socket.close(4008, 'Incompatible protocol');
+            },
+          );
+          return;
+        }
         const message = parseLiveMessage(input);
         if (message.runId !== runId) throw new Error('Run mismatch');
         if (!authenticated) {
