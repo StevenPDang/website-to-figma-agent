@@ -93,7 +93,7 @@ form.onsubmit = (event) => {
       authToken: unknown = Reflect.get(value, 'authToken');
     if (
       typeof url !== 'string' ||
-      !/^ws:\/\/127\.0\.0\.1:\d+$/.test(url) ||
+      !/^ws:\/\/localhost:\d+$/.test(url) ||
       typeof runId !== 'string' ||
       typeof authToken !== 'string'
     )

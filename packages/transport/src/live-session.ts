@@ -150,7 +150,7 @@ export async function createLiveSession(
   if (!address || typeof address === 'string')
     throw new Error('No loopback port');
   return {
-    descriptor: { url: `ws://127.0.0.1:${address.port}`, authToken, runId },
+    descriptor: { url: `ws://localhost:${address.port}`, authToken, runId },
     async importScene(
       value: Omit<ImportRequest, 'destination'>,
     ): Promise<ImportResponse> {

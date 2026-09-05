@@ -25,7 +25,7 @@ prints a connection JSON object. Paste that object into the plugin and choose
 and page. Keep the plugin open until the CLI finishes. The connection token is
 short-lived; do not share it or save it in source control.
 
-The development plugin uses the valid development URL `http://127.0.0.1:3847` for
+The development plugin uses the valid development URL `http://localhost:3847` for
 the WebSocket loopback on port 3847. If another run is using it, finish
 that run first. The CLI waits up to 120 seconds for connection and import. Use
 `--plugin-timeout 300` for a longer wait (maximum 540 seconds). Reopen the plugin
