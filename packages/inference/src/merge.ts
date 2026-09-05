@@ -4,6 +4,7 @@ import {
   type AgenticInferenceDecision,
   type InferenceArtifact,
   type InferenceDecision,
+  type InferenceMergeOutcome,
   validateArtifact,
   type WebsiteIrArtifact,
 } from '@website-to-figma/contracts';
@@ -88,23 +89,24 @@ export function mergeAgentInference(
       proposedDecisions: policy.proposedDecisions,
       rejectedDecisions,
       mergeOutcomes: [
-        ...deterministicDecisions.map((decision) => ({
-          decisionId: decision.decisionId,
-          status: (acceptedKeys.has(conflictKey(decision)) ||
-          rejectedKeys.has(conflictKey(decision))
-            ? 'fallback'
-            : 'accepted') as 'accepted' | 'fallback',
-        })),
-        ...acceptedDecisions.map((decision) => ({
-          decisionId: decision.decisionId,
-          status: 'accepted' as const,
-          ...(superseded.get(decision.decisionId) === undefined
-            ? {}
-            : {
-                supersedesDecisionId: superseded.get(decision.decisionId)!
-                  .decisionId,
-              }),
-        })),
+        ...deterministicDecisions.map((decision) => {
+          const status: InferenceMergeOutcome['status'] =
+            acceptedKeys.has(conflictKey(decision)) ||
+            rejectedKeys.has(conflictKey(decision))
+              ? 'fallback'
+              : 'accepted';
+          return { decisionId: decision.decisionId, status };
+        }),
+        ...acceptedDecisions.map((decision) => {
+          const replaced = superseded.get(decision.decisionId);
+          return {
+            decisionId: decision.decisionId,
+            status: 'accepted' as const,
+            ...(replaced === undefined
+              ? {}
+              : { supersedesDecisionId: replaced.decisionId }),
+          };
+        }),
         ...rejectedDecisions.map((decision) => ({
           decisionId: decision.decisionId,
           status: 'rejected' as const,

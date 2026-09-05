@@ -11,7 +11,6 @@ import {
 
 import { buildCodexPrompt } from './codex-prompt.js';
 import type {
-  AgentInferenceProposal,
   AgentInferenceRequest,
   AgentInferenceResult,
   InferenceProvider,
@@ -210,10 +209,10 @@ function extractProcessError(stdout: string): string | undefined {
       const event: unknown = JSON.parse(line);
       if (typeof event !== 'object' || event === null) continue;
       for (const key of ['message', 'error']) {
-        const value = Reflect.get(event, key);
+        const value = readUnknownProperty(event, key);
         if (typeof value === 'string' && value.length > 0) return value;
         if (typeof value === 'object' && value !== null) {
-          const nestedMessage = Reflect.get(value, 'message');
+          const nestedMessage = readUnknownProperty(value, 'message');
           if (typeof nestedMessage === 'string' && nestedMessage.length > 0) {
             return nestedMessage;
           }
@@ -278,10 +277,7 @@ function wrapProposal(
   ) {
     return undefined;
   }
-  const decisions =
-    typeof parsed === 'object' && parsed !== null
-      ? Reflect.get(parsed, 'decisions')
-      : undefined;
+  const decisions = readUnknownProperty(parsed, 'decisions');
   return {
     schemaVersion: INFERENCE_SCHEMA_VERSION,
     artifactKind: 'inference',
@@ -299,7 +295,7 @@ function wrapProposal(
         ? decisions.map((decision: unknown) => ({
             decisionId:
               typeof decision === 'object' && decision !== null
-                ? Reflect.get(decision, 'decisionId')
+                ? readUnknownProperty(decision, 'decisionId')
                 : undefined,
             status: 'accepted',
           }))
@@ -335,19 +331,23 @@ function findUsage(
   value: unknown,
 ): { inputTokens?: number; outputTokens?: number } | undefined {
   if (typeof value !== 'object' || value === null) return undefined;
-  const input = Reflect.get(value, 'input_tokens');
-  const output = Reflect.get(value, 'output_tokens');
+  const input = readUnknownProperty(value, 'input_tokens');
+  const output = readUnknownProperty(value, 'output_tokens');
   if (typeof input === 'number' || typeof output === 'number') {
     return {
       ...(typeof input === 'number' ? { inputTokens: input } : {}),
       ...(typeof output === 'number' ? { outputTokens: output } : {}),
     };
   }
-  for (const nested of Object.values(value)) {
+  for (const nested of Object.values(value as Record<string, unknown>)) {
     const usage = findUsage(nested);
     if (usage !== undefined) return usage;
   }
   return undefined;
+}
+
+function readUnknownProperty(value: object, key: string): unknown {
+  return (value as Record<string, unknown>)[key];
 }
 
 function minimalEnvironment(): NodeJS.ProcessEnv {

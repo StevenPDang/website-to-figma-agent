@@ -82,7 +82,7 @@ describe('validateProposalPolicy', () => {
       decision({
         kind: 'layout',
         payload: { mode: 'vertical', gap: 3000 },
-      } as Partial<AgenticInferenceDecision>),
+      }),
       'GEOMETRY_OUT_OF_BOUNDS',
     ],
     [
@@ -90,7 +90,7 @@ describe('validateProposalPolicy', () => {
         sourceNodeIds: ['source:text'],
         kind: 'fallback',
         payload: { representation: 'raster', reason: 'easier' },
-      } as Partial<AgenticInferenceDecision>),
+      }),
       'FORBIDDEN_RASTERIZATION',
     ],
     [
@@ -98,7 +98,7 @@ describe('validateProposalPolicy', () => {
         sourceNodeIds: ['source:root'],
         kind: 'fallback',
         payload: { representation: 'raster', reason: 'large' },
-      } as Partial<AgenticInferenceDecision>),
+      }),
       'FORBIDDEN_RASTERIZATION',
     ],
   ])('rejects unsafe proposal decisions independently', (candidate, code) => {
@@ -120,15 +120,17 @@ describe('validateProposalPolicy', () => {
         cloneSourceNodeIds: ['source:clone'],
         clipContent: true,
       },
-    } as Partial<AgenticInferenceDecision>);
+    });
     const rejected = validateProposalPolicy({ decisions: [carousel] }, ir, {
       maxDecisions: 5,
     });
     expect(rejected.rejectedDecisions[0]?.code).toBe('UNPROVEN_CAROUSEL_CLONE');
 
     const matching = structuredClone(ir);
+    const card = matching.payload.nodes[2];
+    if (card === undefined) throw new Error('Missing card fixture.');
     matching.payload.nodes[3] = {
-      ...matching.payload.nodes[2]!,
+      ...card,
       nodeId: 'ir:clone',
       sourceNodeId: 'source:clone',
     };
@@ -141,8 +143,13 @@ describe('validateProposalPolicy', () => {
 
   it('rejects decisions beyond the run budget and nodes in cyclic hierarchy', () => {
     const cyclic = structuredClone(ir);
-    cyclic.payload.nodes[0]!.parentNodeId = 'ir:card';
-    cyclic.payload.nodes[2]!.childNodeIds = ['ir:root'];
+    const cyclicRoot = cyclic.payload.nodes[0];
+    const cyclicCard = cyclic.payload.nodes[2];
+    if (cyclicRoot === undefined || cyclicCard === undefined) {
+      throw new Error('Missing cyclic hierarchy fixtures.');
+    }
+    cyclicRoot.parentNodeId = 'ir:card';
+    cyclicCard.childNodeIds = ['ir:root'];
     const result = validateProposalPolicy(
       {
         decisions: [

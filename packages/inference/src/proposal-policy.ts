@@ -246,7 +246,9 @@ function findCyclicSourceIds(nodes: WebsiteIrNode[]): Set<string> {
     nodesById.get(nodeId)?.childNodeIds.forEach(visit);
     active.pop();
   };
-  nodes.forEach((node) => visit(node.nodeId));
+  nodes.forEach((node) => {
+    visit(node.nodeId);
+  });
   return cyclic;
 }
 

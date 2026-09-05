@@ -84,8 +84,12 @@ describe('createCodexInferenceProvider', () => {
       proposal: { decisions: [] },
       usage: { inputTokens: 12, outputTokens: 3, totalTokens: 15 },
     });
-    const args = JSON.parse(
+    const parsedArgs: unknown = JSON.parse(
       await readFile(join(directory, 'args.json'), 'utf8'),
+    );
+    if (!Array.isArray(parsedArgs)) throw new Error('Expected argument array.');
+    const args = parsedArgs.filter(
+      (value): value is string => typeof value === 'string',
     );
     expect(args).toEqual(
       expect.arrayContaining(['exec', '--ephemeral', '--sandbox', 'read-only']),
@@ -99,10 +103,11 @@ describe('createCodexInferenceProvider', () => {
     ['run:oversized', 'CODEX_OUTPUT_TOO_LARGE'],
   ])('returns %s as a structured failure', async (runId, code) => {
     const result = await provider().infer({ ...request, runId });
-    expect(result).toEqual({
-      ok: false,
-      diagnostic: expect.objectContaining({ code, severity: 'error' }),
-    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.diagnostic.code).toBe(code);
+      expect(result.diagnostic.severity).toBe('error');
+    }
   });
 
   it('bounds execution time', async () => {
@@ -110,19 +115,15 @@ describe('createCodexInferenceProvider', () => {
       ...request,
       runId: 'run:hang',
     });
-    expect(result).toEqual({
-      ok: false,
-      diagnostic: expect.objectContaining({ code: 'CODEX_TIMEOUT' }),
-    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.diagnostic.code).toBe('CODEX_TIMEOUT');
   });
 
   it('handles a missing executable', async () => {
     const result = await provider({
       executable: join(directory, 'missing'),
     }).infer(request);
-    expect(result).toEqual({
-      ok: false,
-      diagnostic: expect.objectContaining({ code: 'CODEX_NOT_FOUND' }),
-    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.diagnostic.code).toBe('CODEX_NOT_FOUND');
   });
 });

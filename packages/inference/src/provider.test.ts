@@ -54,9 +54,8 @@ describe('createFakeInferenceProvider', () => {
     const provider = createFakeInferenceProvider('fake:empty', []);
     const result = await provider.infer(request);
 
-    expect(result).toEqual({
-      ok: false,
-      diagnostic: expect.objectContaining({ code: 'FAKE_PROVIDER_EXHAUSTED' }),
-    });
+    expect(result.ok).toBe(false);
+    if (!result.ok)
+      expect(result.diagnostic.code).toBe('FAKE_PROVIDER_EXHAUSTED');
   });
 });

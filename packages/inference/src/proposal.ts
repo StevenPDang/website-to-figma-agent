@@ -74,13 +74,13 @@ function isClosedProposal(input: unknown): input is { decisions: unknown[] } {
     input !== null &&
     !Array.isArray(input) &&
     Object.keys(input).length === 1 &&
-    Array.isArray(Reflect.get(input, 'decisions'))
+    Array.isArray(readUnknownProperty(input, 'decisions'))
   );
 }
 
 function readDecisionId(candidate: unknown, index: number): string {
   if (typeof candidate === 'object' && candidate !== null) {
-    const value = Reflect.get(candidate, 'decisionId');
+    const value = readUnknownProperty(candidate, 'decisionId');
     if (typeof value === 'string' && value.length > 0) return value;
   }
   return `decision:proposal-${index}`;
@@ -97,14 +97,18 @@ function collectReferencedSourceIds(candidate: unknown): string[] {
       });
     }
   };
-  add(Reflect.get(candidate, 'sourceNodeIds'));
-  const payload = Reflect.get(candidate, 'payload');
+  add(readUnknownProperty(candidate, 'sourceNodeIds'));
+  const payload = readUnknownProperty(candidate, 'payload');
   if (typeof payload === 'object' && payload !== null) {
-    add(Reflect.get(payload, 'viewportSourceNodeId'));
-    add(Reflect.get(payload, 'panelSourceNodeIds'));
-    add(Reflect.get(payload, 'cloneSourceNodeIds'));
-    add(Reflect.get(payload, 'instanceSourceNodeIds'));
-    add(Reflect.get(payload, 'overrideSourceNodeIds'));
+    add(readUnknownProperty(payload, 'viewportSourceNodeId'));
+    add(readUnknownProperty(payload, 'panelSourceNodeIds'));
+    add(readUnknownProperty(payload, 'cloneSourceNodeIds'));
+    add(readUnknownProperty(payload, 'instanceSourceNodeIds'));
+    add(readUnknownProperty(payload, 'overrideSourceNodeIds'));
   }
   return [...values];
+}
+
+function readUnknownProperty(value: object, key: string): unknown {
+  return (value as Record<string, unknown>)[key];
 }

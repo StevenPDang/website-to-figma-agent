@@ -215,20 +215,22 @@ function addScalarTypes(value: unknown): Record<string, unknown> {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     throw new Error('Proposal schema root must be an object.');
   }
-  const result = Object.fromEntries(
-    Object.entries(value).map(([key, nested]) => [
-      key,
-      Array.isArray(nested)
-        ? nested.map((item) =>
-            typeof item === 'object' && item !== null
-              ? addScalarTypes(item)
-              : item,
-          )
-        : typeof nested === 'object' && nested !== null
+  const result: Record<string, unknown> = {};
+  for (const [key, nested] of Object.entries(
+    value as Record<string, unknown>,
+  )) {
+    if (Array.isArray(nested)) {
+      const items: unknown[] = nested;
+      result[key] = items.map((item): unknown =>
+        typeof item === 'object' && item !== null ? addScalarTypes(item) : item,
+      );
+    } else {
+      result[key] =
+        typeof nested === 'object' && nested !== null
           ? addScalarTypes(nested)
-          : nested,
-    ]),
-  );
+          : nested;
+    }
+  }
   if (result.type === undefined && typeof result.const === 'string') {
     result.type = 'string';
   }

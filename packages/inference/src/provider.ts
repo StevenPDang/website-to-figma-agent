@@ -7,7 +7,7 @@ import type {
   WebsiteIrNode,
 } from '@website-to-figma/contracts';
 
-export interface AgentNodeEvidence extends Pick<
+export type AgentNodeEvidence = Pick<
   WebsiteIrNode,
   | 'nodeId'
   | 'sourceNodeId'
@@ -18,9 +18,9 @@ export interface AgentNodeEvidence extends Pick<
   | 'text'
   | 'styles'
   | 'visible'
-> {}
+>;
 
-export interface AgentAssetEvidence extends Pick<
+export type AgentAssetEvidence = Pick<
   AssetReference,
   | 'assetId'
   | 'sourceNodeId'
@@ -30,7 +30,7 @@ export interface AgentAssetEvidence extends Pick<
   | 'width'
   | 'height'
   | 'byteLength'
-> {}
+>;
 
 export interface AgentInferenceRequest {
   runId: string;
@@ -92,20 +92,22 @@ export function createFakeInferenceProvider(
   return {
     providerId,
     requests,
-    async infer(request) {
+    infer(request) {
       requests.push(structuredClone(request));
       const result = results[resultIndex];
       resultIndex += 1;
-      return result === undefined
-        ? {
-            ok: false,
-            diagnostic: {
-              code: 'FAKE_PROVIDER_EXHAUSTED',
-              severity: 'error',
-              message: `Fake provider ${providerId} has no queued result.`,
-            },
-          }
-        : structuredClone(result);
+      return Promise.resolve(
+        result === undefined
+          ? {
+              ok: false,
+              diagnostic: {
+                code: 'FAKE_PROVIDER_EXHAUSTED',
+                severity: 'error',
+                message: `Fake provider ${providerId} has no queued result.`,
+              },
+            }
+          : structuredClone(result),
+      );
     },
   };
 }
