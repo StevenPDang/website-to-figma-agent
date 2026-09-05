@@ -219,7 +219,7 @@ None for MVP planning. New questions discovered during implementation must updat
 ## Approved Live Integration
 
 Protocol 1.1.0 uses authenticated loopback WebSockets (CLI port 3847, explicitly
-allowlisted in the development plugin manifest) with a bounded complete-scene
+allowlisted as `http://127.0.0.1:3847` in the development plugin manifest) with a bounded complete-scene
 request, content-addressed base64 assets, a destination acknowledgement, and a
 structured result plus PNG export. Protocol 1.0.0 remains available for legacy
 contract tests but is rejected by the live importer. A plugin instance caches each
