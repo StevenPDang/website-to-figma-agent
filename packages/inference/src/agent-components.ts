@@ -78,7 +78,7 @@ export function resolveComponentDecision(
   }
   const requiredOverrides = presentRoots
     .slice(1)
-    .flatMap((root) => differingSources(first, root, nodesById));
+    .flatMap((root) => differingSources(first, root, nodesById, ir));
   const declaredOverrides = new Set(decision.payload.overrideSourceNodeIds);
   const missing = requiredOverrides.find((id) => !declaredOverrides.has(id));
   if (missing !== undefined) {
@@ -115,12 +115,15 @@ function differingSources(
   canonical: WebsiteIrNode,
   instance: WebsiteIrNode,
   nodesById: ReadonlyMap<string, WebsiteIrNode>,
+  ir: WebsiteIrArtifact,
 ): string[] {
   const differences: string[] = [];
   if (
     canonical.text !== instance.text ||
     JSON.stringify(canonical.styles ?? {}) !==
-      JSON.stringify(instance.styles ?? {})
+      JSON.stringify(instance.styles ?? {}) ||
+    assetSignature(canonical.sourceNodeId, ir) !==
+      assetSignature(instance.sourceNodeId, ir)
   ) {
     differences.push(instance.sourceNodeId);
   }
@@ -131,9 +134,22 @@ function differingSources(
       instanceId === undefined ? undefined : nodesById.get(instanceId);
     if (canonicalChild !== undefined && instanceChild !== undefined) {
       differences.push(
-        ...differingSources(canonicalChild, instanceChild, nodesById),
+        ...differingSources(canonicalChild, instanceChild, nodesById, ir),
       );
     }
   });
   return differences;
+}
+
+function assetSignature(sourceNodeId: string, ir: WebsiteIrArtifact): string {
+  return JSON.stringify(
+    ir.payload.assets
+      .filter((asset) => asset.sourceNodeId === sourceNodeId)
+      .map(
+        (asset) =>
+          asset.contentHash ??
+          `${asset.kind}:${asset.width ?? 0}x${asset.height ?? 0}`,
+      )
+      .sort(),
+  );
 }

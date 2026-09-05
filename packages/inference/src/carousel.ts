@@ -50,10 +50,12 @@ export function resolveCarouselDecision(
     };
   }
   const panelFingerprints = new Set(
-    decision.payload.panelSourceNodeIds.map((id) => fingerprint(id, ir)),
+    decision.payload.panelSourceNodeIds.map((id) =>
+      carouselFingerprint(id, ir),
+    ),
   );
   const unproven = decision.payload.cloneSourceNodeIds.find(
-    (id) => !panelFingerprints.has(fingerprint(id, ir)),
+    (id) => !panelFingerprints.has(carouselFingerprint(id, ir)),
   );
   if (unproven !== undefined) {
     return {
@@ -87,13 +89,31 @@ function intersects(
   );
 }
 
-function fingerprint(sourceNodeId: string, ir: WebsiteIrArtifact): string {
-  const node = ir.payload.nodes.find(
-    (candidate) => candidate.sourceNodeId === sourceNodeId,
+export function carouselFingerprint(
+  sourceNodeId: string,
+  ir: WebsiteIrArtifact,
+): string {
+  const nodesBySource = new Map(
+    ir.payload.nodes.map((node) => [node.sourceNodeId, node]),
   );
+  const nodesById = new Map(
+    ir.payload.nodes.map((node) => [node.nodeId, node]),
+  );
+  const node = nodesBySource.get(sourceNodeId);
   if (node === undefined) return 'missing';
+  return fingerprintNode(node, ir, nodesById, new Set());
+}
+
+function fingerprintNode(
+  node: WebsiteIrNode,
+  ir: WebsiteIrArtifact,
+  nodesById: ReadonlyMap<string, WebsiteIrNode>,
+  visited: Set<string>,
+): string {
+  if (visited.has(node.nodeId)) return 'cycle';
+  visited.add(node.nodeId);
   const assets = ir.payload.assets
-    .filter((asset) => asset.sourceNodeId === sourceNodeId)
+    .filter((asset) => asset.sourceNodeId === node.sourceNodeId)
     .map(
       (asset) =>
         asset.contentHash ??
@@ -105,7 +125,12 @@ function fingerprint(sourceNodeId: string, ir: WebsiteIrArtifact): string {
     text: node.text ?? '',
     width: node.rect?.width,
     height: node.rect?.height,
-    childCount: node.childNodeIds.length,
+    children: node.childNodeIds.map((id) => {
+      const child = nodesById.get(id);
+      return child === undefined
+        ? 'missing'
+        : fingerprintNode(child, ir, nodesById, new Set(visited));
+    }),
     assets,
   });
 }

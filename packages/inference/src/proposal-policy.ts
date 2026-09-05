@@ -7,6 +7,7 @@ import type {
 
 import type { AgentInferenceProposal } from './provider.js';
 import { isRasterFallbackEligible } from './fallback.js';
+import { carouselFingerprint } from './carousel.js';
 
 export interface ProposalPolicyOptions {
   maxDecisions: number;
@@ -166,11 +167,11 @@ function validateDecision(
   if (candidate.kind === 'carousel') {
     const panelFingerprints = new Set(
       candidate.payload.panelSourceNodeIds.map((id) =>
-        fingerprint(sourceNodes.get(id), ir),
+        carouselFingerprint(id, ir),
       ),
     );
     const unproven = candidate.payload.cloneSourceNodeIds.find(
-      (id) => !panelFingerprints.has(fingerprint(sourceNodes.get(id), ir)),
+      (id) => !panelFingerprints.has(carouselFingerprint(id, ir)),
     );
     if (unproven !== undefined) {
       return reject(
@@ -213,29 +214,6 @@ function isMajorSection(
     node.rect.width >= ir.viewport.width * 0.8 &&
     node.rect.height >= ir.viewport.height * 0.4
   );
-}
-
-function fingerprint(
-  node: WebsiteIrNode | undefined,
-  ir: WebsiteIrArtifact,
-): string {
-  if (node === undefined) return 'missing';
-  const assetHashes = ir.payload.assets
-    .filter((asset) => asset.sourceNodeId === node.sourceNodeId)
-    .map(
-      (asset) =>
-        asset.contentHash ??
-        `${asset.kind}:${asset.width ?? ''}x${asset.height ?? ''}`,
-    )
-    .sort();
-  return JSON.stringify({
-    kind: node.kind,
-    text: node.text ?? '',
-    width: node.rect?.width,
-    height: node.rect?.height,
-    children: node.childNodeIds.length,
-    assets: assetHashes,
-  });
 }
 
 function findCyclicSourceIds(nodes: WebsiteIrNode[]): Set<string> {
