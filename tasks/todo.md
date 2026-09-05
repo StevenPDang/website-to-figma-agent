@@ -639,14 +639,14 @@ revisions and explicit compatibility errors.
 
 **Acceptance criteria:**
 
-- [ ] Protocol schemas reject invalid versions, runs, revisions, destinations, and message order.
-- [ ] Same-revision retries are idempotent and conflicting revisions are rejected.
-- [ ] Older plugins receive a clear rebuild/reload instruction before mutation.
+- [x] Protocol schemas reject invalid versions, runs, revisions, destinations, and message order.
+- [x] Same-revision retries are idempotent and conflicting revisions are rejected.
+- [x] Older plugins receive a clear rebuild/reload instruction before mutation.
 
 **Verification:**
 
-- [ ] Run protocol schema, parser, state-machine, and compatibility tests.
-- [ ] Run `npm run validate:schemas`.
+- [x] Run protocol schema, parser, state-machine, and compatibility tests.
+- [x] Run `npm run validate:schemas`.
 
 **Dependencies:** Task 18
 
@@ -661,14 +661,14 @@ run/revision ownership metadata while protecting all pre-existing and user-creat
 
 **Acceptance criteria:**
 
-- [ ] Each complete revision exports once and a retry returns the cached result.
-- [ ] Finalization retains only the selected complete revision.
-- [ ] Cancellation/disconnect preserves the last complete candidate and never alters user-owned nodes.
+- [x] Each complete revision exports once and a retry returns the cached result.
+- [x] Finalization retains only the selected complete revision.
+- [x] Cancellation/disconnect preserves the last complete candidate and never alters user-owned nodes.
 
 **Verification:**
 
-- [ ] Run plugin adapter lifecycle, ownership, retry, and failure tests.
-- [ ] Package the plugin and run the controller harness.
+- [x] Run plugin adapter lifecycle, ownership, retry, and failure tests.
+- [x] Package the plugin and run the controller harness.
 
 **Dependencies:** Tasks 26 and 27
 
@@ -683,14 +683,14 @@ receive render results, finalize selection, and retain reconnect/idempotency gua
 
 **Acceptance criteria:**
 
-- [ ] One authenticated connection exchanges up to three ordered candidate revisions.
-- [ ] Retry, disconnect, timeout, cancellation, and stale-result behavior are deterministic.
-- [ ] The last complete candidate remains recoverable after interruption.
+- [x] One authenticated connection exchanges up to three ordered candidate revisions.
+- [x] Retry, disconnect, timeout, cancellation, and stale-result behavior are deterministic.
+- [x] The last complete candidate remains recoverable after interruption.
 
 **Verification:**
 
-- [ ] Run transport unit and integration tests with synthetic peers.
-- [ ] Run plugin UI end-to-end transport tests.
+- [x] Run transport unit and integration tests with synthetic peers.
+- [x] Run plugin UI end-to-end transport tests.
 
 **Dependencies:** Tasks 27 and 28
 
@@ -705,14 +705,14 @@ re-proposal, ranking, and finalization with a three-render cap and complete hist
 
 **Acceptance criteria:**
 
-- [ ] The loop stops on pass, no improvement, invalid output, provider failure, or exhausted budget.
-- [ ] The best structurally valid candidate is selected rather than merely the last candidate.
-- [ ] Every pass records inputs, accepted/rejected decisions, diagnostics, metrics, usage, and stop reason.
+- [x] The loop stops on pass, no improvement, invalid output, provider failure, or exhausted budget.
+- [x] The best structurally valid candidate is selected rather than merely the last candidate.
+- [x] Every pass records inputs, accepted/rejected decisions, diagnostics, metrics, usage, and stop reason.
 
 **Verification:**
 
-- [ ] Run correction-state and fake-provider end-to-end tests.
-- [ ] Verify timeout and failure paths retain the best candidate.
+- [x] Run correction-state and fake-provider end-to-end tests.
+- [x] Verify timeout and failure paths retain the best candidate.
 
 **Dependencies:** Tasks 20, 21, 25, 26, and 29
 
@@ -722,9 +722,9 @@ re-proposal, ranking, and finalization with a three-render cap and complete hist
 
 ### Checkpoint H
 
-- [ ] Fake-provider end-to-end flow completes three revisions and selects the expected candidate.
-- [ ] Protocol, transport, plugin ownership, retry, disconnect, and cleanup tests pass.
-- [ ] Coverage, integration, end-to-end, and plugin packaging commands pass.
+- [x] Fake-provider end-to-end flow completes three revisions and selects the expected candidate.
+- [x] Protocol, transport, plugin ownership, retry, disconnect, and cleanup tests pass.
+- [x] Coverage, integration, end-to-end, and plugin packaging commands pass.
 - [ ] Human reviews the iterative mutation behavior before CLI rollout.
 
 ### Phase I: Deployable Frontend-Development Workflow
