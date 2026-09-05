@@ -13,19 +13,19 @@ export interface WireAsset {
   contentHash: string;
   base64: string;
 }
-interface Base {
+export interface LiveMessageBase {
   protocolVersion: typeof LIVE_PROTOCOL_VERSION;
   runId: string;
 }
 export type LiveMessage =
-  | (Base & {
+  | (LiveMessageBase & {
       type: 'hello';
       authToken: string;
       clientId: string;
       destination: Destination;
     })
-  | (Base & { type: 'hello-ack'; accepted: true })
-  | (Base & {
+  | (LiveMessageBase & { type: 'hello-ack'; accepted: true })
+  | (LiveMessageBase & {
       type: 'candidate-request';
       revision: number;
       scene: FigmaSceneArtifact;
@@ -34,18 +34,21 @@ export type LiveMessage =
       height: number;
       destination: Destination;
     })
-  | (Base & {
+  | (LiveMessageBase & {
       type: 'candidate-result';
       revision: number;
       result: ImportResultArtifact;
       png: string;
       destination: Destination;
     })
-  | (Base & { type: 'finalize-request'; selectedRevision: number })
-  | (Base & { type: 'finalize-result'; selectedRevision: number })
-  | (Base & { type: 'cancel-request'; reason?: string })
-  | (Base & { type: 'cancel-result'; retainedRevision: number | null })
-  | (Base & {
+  | (LiveMessageBase & { type: 'finalize-request'; selectedRevision: number })
+  | (LiveMessageBase & { type: 'finalize-result'; selectedRevision: number })
+  | (LiveMessageBase & { type: 'cancel-request'; reason?: string })
+  | (LiveMessageBase & {
+      type: 'cancel-result';
+      retainedRevision: number | null;
+    })
+  | (LiveMessageBase & {
       type: 'error';
       code: string;
       message: string;

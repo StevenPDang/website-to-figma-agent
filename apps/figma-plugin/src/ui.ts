@@ -54,19 +54,29 @@ function connect() {
         status.textContent = 'Connected. The CLI is capturing the page…';
         return;
       }
-      if (!authenticated || message.type !== 'candidate-request')
-        throw new Error('Unexpected message');
-      if (JSON.stringify(message.destination) !== JSON.stringify(destination))
-        throw new Error('Destination mismatch');
-      status.textContent = 'Checking assets and importing editable layers…';
-      for (const asset of message.assets) {
-        // Figma's UI sandbox does not expose Web Crypto. The authenticated
-        // localhost transport and controller perform boundary checks; the UI
-        // only confirms that each payload is decodable before forwarding it.
-        if (!asset.base64 || atob(asset.base64).length === 0)
-          throw new Error('Asset payload is empty');
+      if (!authenticated) throw new Error('Unexpected message');
+      if (message.type === 'candidate-request') {
+        if (JSON.stringify(message.destination) !== JSON.stringify(destination))
+          throw new Error('Destination mismatch');
+        status.textContent = `Importing editable candidate ${message.revision + 1}…`;
+        for (const asset of message.assets) {
+          // Figma's UI sandbox does not expose Web Crypto. The authenticated
+          // localhost transport and controller perform boundary checks; the UI
+          // only confirms that each payload is decodable before forwarding it.
+          if (!asset.base64 || atob(asset.base64).length === 0)
+            throw new Error('Asset payload is empty');
+        }
+        parent.postMessage({ pluginMessage: message }, '*');
+        return;
       }
-      parent.postMessage({ pluginMessage: message }, '*');
+      if (
+        message.type === 'finalize-request' ||
+        message.type === 'cancel-request'
+      ) {
+        parent.postMessage({ pluginMessage: message }, '*');
+        return;
+      }
+      throw new Error('Unexpected message');
     } catch (error) {
       status.textContent =
         error instanceof Error ? error.message : 'Connection error';
@@ -78,7 +88,11 @@ function connect() {
     status.textContent = 'Connection unavailable.';
   };
   socket.onclose = (event) => {
-    if (event.code === 1000 && event.reason === 'Import received')
+    if (
+      event.code === 1000 &&
+      (event.reason === 'Candidate finalized' ||
+        event.reason === 'Candidate run cancelled')
+    )
       finished = true;
     authenticated = false;
     if (!finished && retries++ < 3) {
@@ -162,10 +176,22 @@ window.onmessage = (event) => {
   }
   try {
     const response = parseLiveMessage(value);
-    if (response.type !== 'candidate-result') return;
-    finished = true;
-    socket?.send(JSON.stringify(response));
-    status.textContent = `Import ${response.result.payload.status}. See CLI for visual QA and reports.`;
+    if (response.type === 'candidate-result') {
+      socket?.send(JSON.stringify(response));
+      status.textContent = `Candidate ${response.revision + 1} ${response.result.payload.status}. Waiting for QA…`;
+      return;
+    }
+    if (
+      response.type === 'finalize-result' ||
+      response.type === 'cancel-result'
+    ) {
+      finished = true;
+      socket?.send(JSON.stringify(response));
+      status.textContent =
+        response.type === 'finalize-result'
+          ? `Candidate ${response.selectedRevision + 1} finalized.`
+          : 'Candidate run cancelled; last complete candidate retained.';
+    }
   } catch {
     status.textContent = 'Invalid plugin result';
   }

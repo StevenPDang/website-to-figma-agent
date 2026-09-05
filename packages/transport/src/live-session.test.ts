@@ -166,3 +166,139 @@ it('bounds waiting when no plugin connects', async () => {
     await session.close();
   }
 });
+
+it('exchanges three revisions, caches retry results, and finalizes one connection', async () => {
+  const session = await createLiveSession('run:test', 3000);
+  const socket = new WebSocket(session.descriptor.url);
+  let candidateMessages = 0;
+  try {
+    socket.on('open', () => {
+      socket.send(
+        JSON.stringify({
+          type: 'hello',
+          protocolVersion: LIVE_PROTOCOL_VERSION,
+          runId: 'run:test',
+          authToken: session.descriptor.authToken,
+          clientId: 'multi-client',
+          destination,
+        }),
+      );
+    });
+    socket.on('message', (raw) => {
+      const message = parseLiveMessage(
+        JSON.parse(Buffer.from(raw as ArrayBuffer).toString()) as unknown,
+      );
+      if (message.type === 'candidate-request') {
+        candidateMessages += 1;
+        const response: CandidateResponse = {
+          protocolVersion: LIVE_PROTOCOL_VERSION,
+          type: 'candidate-result',
+          runId: 'run:test',
+          revision: message.revision,
+          destination,
+          png: '',
+          result: {
+            ...scene,
+            artifactKind: 'import-result',
+            payload: {
+              status: 'success',
+              sceneNodeIds: ['scene:0'],
+              nodes: [
+                {
+                  sceneNodeId: 'scene:0',
+                  figmaNodeId: `1:${message.revision + 3}`,
+                  status: 'created',
+                },
+              ],
+              diagnostics: [],
+            },
+          },
+        };
+        socket.send(JSON.stringify(response));
+      }
+      if (message.type === 'finalize-request') {
+        socket.send(
+          JSON.stringify({
+            protocolVersion: LIVE_PROTOCOL_VERSION,
+            type: 'finalize-result',
+            runId: 'run:test',
+            selectedRevision: message.selectedRevision,
+          }),
+        );
+      }
+    });
+    await session.waitForConnection();
+    for (let revision = 0; revision < 3; revision += 1) {
+      await expect(
+        session.renderCandidate({
+          protocolVersion: LIVE_PROTOCOL_VERSION,
+          type: 'candidate-request',
+          runId: 'run:test',
+          revision,
+          scene,
+          assets: [],
+          width: 100,
+          height: 100,
+        }),
+      ).resolves.toMatchObject({ revision });
+    }
+    await session.renderCandidate({
+      protocolVersion: LIVE_PROTOCOL_VERSION,
+      type: 'candidate-request',
+      runId: 'run:test',
+      revision: 2,
+      scene,
+      assets: [],
+      width: 100,
+      height: 100,
+    });
+    expect(candidateMessages).toBe(3);
+    await expect(session.finalize(1)).resolves.toMatchObject({
+      type: 'finalize-result',
+      selectedRevision: 1,
+    });
+    await expect(session.finalize(0)).rejects.toThrow('ended');
+  } finally {
+    await session.close();
+  }
+});
+
+it('cancels while retaining the peer-reported last complete revision', async () => {
+  const session = await createLiveSession('run:test', 3000);
+  const socket = new WebSocket(session.descriptor.url);
+  try {
+    socket.on('open', () => {
+      socket.send(
+        JSON.stringify({
+          type: 'hello',
+          protocolVersion: LIVE_PROTOCOL_VERSION,
+          runId: 'run:test',
+          authToken: session.descriptor.authToken,
+          clientId: 'cancel-client',
+          destination,
+        }),
+      );
+    });
+    socket.on('message', (raw) => {
+      const message = parseLiveMessage(
+        JSON.parse(Buffer.from(raw as ArrayBuffer).toString()) as unknown,
+      );
+      if (message.type === 'cancel-request') {
+        socket.send(
+          JSON.stringify({
+            protocolVersion: LIVE_PROTOCOL_VERSION,
+            type: 'cancel-result',
+            runId: 'run:test',
+            retainedRevision: 0,
+          }),
+        );
+      }
+    });
+    await session.waitForConnection();
+    await expect(session.cancel('Provider failed')).resolves.toMatchObject({
+      retainedRevision: 0,
+    });
+  } finally {
+    await session.close();
+  }
+});
