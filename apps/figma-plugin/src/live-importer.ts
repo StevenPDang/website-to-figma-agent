@@ -97,6 +97,9 @@ export async function importLiveScene(
   wrapper.clipsContent = true;
   wrapper.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1 } }];
   wrapper.setPluginData('runId', scene.runId);
+  wrapper.setPluginData('candidateRoot', 'true');
+  wrapper.setPluginData('candidateRevision', String(request.revision));
+  wrapper.setPluginData('candidateState', 'importing');
   const queue = [...scene.payload.rootNodeIds];
   for (let i = 0; i < queue.length; i++) {
     const id = queue[i];
@@ -412,6 +415,7 @@ export async function importLiveScene(
       message: 'Figma PNG export failed.',
     });
   }
+  wrapper.setPluginData('candidateState', 'complete');
   return {
     protocolVersion: request.protocolVersion,
     runId: request.runId,

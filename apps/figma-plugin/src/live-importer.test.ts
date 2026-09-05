@@ -89,6 +89,9 @@ class TestNode {
   setPluginData(k: string, v: string) {
     this.data.set(k, v);
   }
+  getPluginData(k: string) {
+    return this.data.get(k) ?? '';
+  }
   remove() {
     this.removed = true;
   }
@@ -105,7 +108,13 @@ function harness() {
   };
   const api = {
     root: { name: 'Test' },
-    currentPage: { id: 'page:1', name: 'Page', selection: [] },
+    currentPage: {
+      id: 'page:1',
+      name: 'Page',
+      selection: [],
+      findAll: (predicate: (node: TestNode) => boolean) =>
+        nodes.filter(predicate),
+    },
     viewport: { scrollAndZoomIntoView: () => {} },
     createFrame: () => create('FRAME'),
     createText: () => create('TEXT'),
@@ -171,8 +180,10 @@ it('rejects cyclic or incompatible scenes before creating nodes', async () => {
   ).rejects.toThrow();
   expect(nodes).toHaveLength(0);
 });
-it('runs the packaged controller without dynamic code generation and deduplicates retries', async () => {
+it('runs the packaged controller, deduplicates retries, and finalizes owned revisions', async () => {
   const { api, nodes } = harness();
+  const userNode = new TestNode('FRAME', 'user:1');
+  nodes.push(userNode);
   const responses: unknown[] = [];
   const ui: {
     onmessage?: (value: unknown) => void;
@@ -204,5 +215,28 @@ it('runs the packaged controller without dynamic code generation and deduplicate
   ui.onmessage?.(request);
   await expect.poll(() => responses.length).toBe(2);
   expect((responses[0] as CandidateResponse).type).toBe('candidate-result');
-  expect(nodes.filter((n) => n.type === 'TEXT')).toHaveLength(1);
+  expect(nodes.filter((n) => n.type === 'TEXT' && !n.removed)).toHaveLength(1);
+
+  ui.onmessage?.({ ...request, revision: 1 });
+  await expect.poll(() => responses.length).toBe(3);
+  ui.onmessage?.({
+    protocolVersion: '1.2.0',
+    runId: request.runId,
+    type: 'finalize-request',
+    selectedRevision: 0,
+  });
+  await expect.poll(() => responses.length).toBe(4);
+  expect(Reflect.get(responses[3] as object, 'type')).toBe('finalize-result');
+  const roots = nodes.filter(
+    (node) => node.getPluginData('candidateRoot') === 'true',
+  );
+  expect(
+    roots.find((node) => node.getPluginData('candidateRevision') === '0')
+      ?.removed,
+  ).toBe(false);
+  expect(
+    roots.find((node) => node.getPluginData('candidateRevision') === '1')
+      ?.removed,
+  ).toBe(true);
+  expect(userNode.removed).toBe(false);
 });
