@@ -78,7 +78,7 @@ function connect() {
     } catch (error) {
       status.textContent =
         error instanceof Error ? error.message : 'Connection error';
-      socket?.close(1008);
+      socket?.close(4008, 'Invalid import message');
       finished = true;
     }
   };
