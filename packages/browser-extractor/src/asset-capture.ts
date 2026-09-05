@@ -62,28 +62,6 @@ const discoverAssets = () => {
     const element = node as Element;
     const rect = element.getBoundingClientRect();
     const tag = element.tagName.toLowerCase();
-    const style = getComputedStyle(element);
-    const isTransformedCarousel =
-      !['img', 'video', 'svg', 'canvas'].includes(tag) &&
-      rect.width > 0 &&
-      rect.height > 0 &&
-      rect.height <= window.innerHeight * 1.5 &&
-      ['hidden', 'clip'].includes(style.overflowX) &&
-      element.querySelectorAll('img').length >= 3 &&
-      [...element.querySelectorAll('*')].some(
-        (descendant) => getComputedStyle(descendant).transform !== 'none',
-      );
-    if (isTransformedCarousel) {
-      element.setAttribute(marker, path);
-      result.push({
-        sourceNodeId: `dom:${path}`,
-        kind: 'image',
-        elementScreenshotId: path,
-        width: rect.width,
-        height: rect.height,
-      });
-      return;
-    }
     if (tag === 'img') {
       const image = element as HTMLImageElement;
       result.push({

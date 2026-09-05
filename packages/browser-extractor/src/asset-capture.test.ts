@@ -71,7 +71,7 @@ describe('asset capture', () => {
     }
   }, 20_000);
 
-  it('captures a transformed clipped image carousel as its visible rendered state', async () => {
+  it('keeps transformed carousel panels as individual editable images', async () => {
     const pixel = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
     const fixture = await startFixtureServer(`
       <div id="carousel" style="width:300px;height:100px;overflow-x:hidden">
@@ -89,19 +89,23 @@ describe('asset capture', () => {
     });
     try {
       const dom = await captureDom(session.page);
-      const carousel = dom.nodes.find(
-        (node) => node.tagName === 'div' && node.rect?.width === 300,
-      );
+      const imageNodeIds = dom.nodes
+        .filter((node) => node.tagName === 'img')
+        .map((node) => node.sourceNodeId);
       const result = await captureAssets(session.page);
-      expect(result.assets).toEqual([
-        expect.objectContaining({
-          sourceNodeId: carousel?.sourceNodeId,
-          kind: 'image',
-          mimeType: 'image/png',
-          width: 300,
-          height: 100,
-        }),
-      ]);
+      expect(result.assets).toHaveLength(3);
+      expect(result.assets.map((asset) => asset.sourceNodeId)).toEqual(
+        imageNodeIds,
+      );
+      expect(result.assets).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            kind: 'image',
+            width: 1,
+            height: 1,
+          }),
+        ]),
+      );
     } finally {
       await session.close();
       await fixture.close();
