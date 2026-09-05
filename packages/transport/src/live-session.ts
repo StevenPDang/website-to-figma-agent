@@ -21,7 +21,7 @@ export async function createLiveSession(
 ) {
   const authToken = randomBytes(32).toString('hex');
   const server = new WebSocketServer({
-    host: '127.0.0.1',
+    host: 'localhost',
     port,
     maxPayload: MAX_WIRE_BYTES,
     perMessageDeflate: false,
