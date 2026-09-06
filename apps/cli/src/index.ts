@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 import { runImport } from './pipeline.js';
+import { parseAgenticCliOptions } from './agentic-options.js';
 const [, , command, url, ...rest] = process.argv;
 if (command !== 'import' || !url) {
   console.error(
-    'Usage: website-to-figma import <url> [--output <dir>] [--capture-only] [--plugin-timeout <seconds>]',
+    'Usage: website-to-figma import <url> [--inference deterministic|agentic] [--provider local-codex] [--max-renders 1..3] [--output <dir>] [--capture-only] [--plugin-timeout <seconds>]',
   );
   process.exitCode = 2;
 } else {
+  const agentic = parseAgenticCliOptions(rest);
   const outputIndex = rest.indexOf('--output');
   const outputDir = outputIndex >= 0 ? rest[outputIndex + 1] : undefined;
   const timeoutIndex = rest.indexOf('--plugin-timeout');
@@ -18,6 +20,10 @@ if (command !== 'import' || !url) {
     ...(outputDir ? { outputDir } : {}),
     captureOnly: rest.includes('--capture-only'),
     pluginTimeoutMs: seconds * 1000,
+    ...agentic,
+    onProgress: (message) => {
+      console.error(message);
+    },
     onConnection: (descriptor) => {
       console.error(
         'Open the Website to Figma development plugin in your destination page. Paste this short-lived connection JSON; capture will wait until the plugin connects:',

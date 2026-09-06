@@ -6,10 +6,12 @@ import WebSocket from 'ws';
 import { expect, it } from 'vitest';
 import { startFixtureServer } from '@website-to-figma/browser-extractor';
 import {
+  LIVE_PROTOCOL_VERSION,
   parseLiveMessage,
   validateArtifact,
 } from '@website-to-figma/contracts';
 import { runImport } from '../../apps/cli/src/pipeline.js';
+import { createFakeInferenceProvider } from '@website-to-figma/inference';
 
 it('runs Chrome capture through authenticated result exchange and measured PNG QA', async () => {
   const fixture = await startFixtureServer(
@@ -19,6 +21,13 @@ it('runs Chrome capture through authenticated result exchange and measured PNG Q
   let socket: WebSocket | undefined;
   let connectionCreatedBeforeCapture = false;
   let connectionAttempted = false;
+  const provider = createFakeInferenceProvider('integration-provider', [
+    {
+      ok: true,
+      proposal: { decisions: [] },
+      usage: { inputTokens: 10, outputTokens: 2, totalTokens: 12 },
+    },
+  ]);
   try {
     const result = await runImport({
       url: fixture.url,
@@ -26,6 +35,8 @@ it('runs Chrome capture through authenticated result exchange and measured PNG Q
       outputDir,
       pluginTimeoutMs: 5000,
       pluginPort: 0,
+      inferenceMode: 'agentic',
+      provider,
       onConnection: (descriptor) => {
         connectionCreatedBeforeCapture = !existsSync(
           join(outputDir, 'raw-capture.json'),
@@ -57,6 +68,17 @@ it('runs Chrome capture through authenticated result exchange and measured PNG Q
                   : Buffer.from(raw as ArrayBuffer).toString(),
               ) as unknown,
             );
+            if (message.type === 'finalize-request') {
+              socket?.send(
+                JSON.stringify({
+                  type: 'finalize-result',
+                  protocolVersion: LIVE_PROTOCOL_VERSION,
+                  runId: descriptor.runId,
+                  selectedRevision: message.selectedRevision,
+                }),
+              );
+              return;
+            }
             if (message.type !== 'candidate-request') return;
             // Synthetic peer: this tests orchestration/PNG QA, not Figma's renderer.
             const png = (
@@ -95,6 +117,14 @@ it('runs Chrome capture through authenticated result exchange and measured PNG Q
     expect(connectionCreatedBeforeCapture).toBe(true);
     expect(connectionAttempted).toBe(true);
     expect(result.status).toBe('success');
+    expect(result).toMatchObject({
+      inferenceMode: 'agentic',
+      providerId: 'integration-provider',
+      selectedRevision: 0,
+      stopReason: 'automated-pass',
+      usage: { totalTokens: 12 },
+    });
+    expect(provider.requests).toHaveLength(1);
     expect(result.metrics).toEqual({ ssim: 1, changedPixelRatio: 0 });
     for (const name of [
       'raw-capture',
@@ -114,6 +144,11 @@ it('runs Chrome capture through authenticated result exchange and measured PNG Q
     expect(
       (await readFile(join(outputDir, 'figma.png'))).length,
     ).toBeGreaterThan(0);
+    expect(
+      JSON.parse(
+        await readFile(join(outputDir, 'correction-history.json'), 'utf8'),
+      ),
+    ).toMatchObject({ selectedRevision: 0, stopReason: 'automated-pass' });
   } finally {
     socket?.terminate();
     await fixture.close();

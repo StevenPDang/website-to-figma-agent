@@ -61,6 +61,14 @@ export function createCodexInferenceProvider(
           schemaPath,
           outputPath,
           prompt: buildCodexPrompt(request),
+          imagePaths: [
+            ...(request.visualEvidence === undefined
+              ? []
+              : [request.visualEvidence.referenceImagePath]),
+            ...(request.visualEvidence?.candidateImagePath === undefined
+              ? []
+              : [request.visualEvidence.candidateImagePath]),
+          ],
           timeoutMs,
           maxOutputBytes,
           environment: options.environment ?? minimalEnvironment(),
@@ -92,6 +100,7 @@ async function runCodex(options: {
   schemaPath: string;
   outputPath: string;
   prompt: string;
+  imagePaths: string[];
   timeoutMs: number;
   maxOutputBytes: number;
   environment: NodeJS.ProcessEnv;
@@ -113,6 +122,7 @@ async function runCodex(options: {
         options.schemaPath,
         '--output-last-message',
         options.outputPath,
+        ...options.imagePaths.flatMap((path) => ['--image', path]),
         '-',
       ],
       {

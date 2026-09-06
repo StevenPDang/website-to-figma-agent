@@ -16,6 +16,10 @@ const request: AgentInferenceRequest = {
   section: { sectionId: 'source:root', nodes: [] },
   shared: { deterministicDecisions: [], assets: [] },
   diagnostics: [],
+  visualEvidence: {
+    referenceImagePath: '/tmp/reference.png',
+    candidateImagePath: '/tmp/candidate.png',
+  },
   invariants: {
     sourceNodeIds: ['source:root'],
     maxDecisions: 10,
@@ -112,7 +116,15 @@ describe('createCodexInferenceProvider', () => {
       (value): value is string => typeof value === 'string',
     );
     expect(args).toEqual(
-      expect.arrayContaining(['exec', '--ephemeral', '--sandbox', 'read-only']),
+      expect.arrayContaining([
+        'exec',
+        '--ephemeral',
+        '--sandbox',
+        'read-only',
+        '--image',
+        '/tmp/reference.png',
+        '/tmp/candidate.png',
+      ]),
     );
     expect(args).not.toContain('--dangerously-bypass-approvals-and-sandbox');
   });

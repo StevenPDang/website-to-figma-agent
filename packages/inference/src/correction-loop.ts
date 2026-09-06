@@ -28,6 +28,9 @@ export interface CandidateEvaluation {
 export interface CorrectionLoopOptions {
   provider: InferenceProvider;
   baselineInference: AgenticInferenceArtifact;
+  baselineRequest?: AgentInferenceRequest;
+  baselineUsage?: CorrectionPassRecord['usage'];
+  baselineDiagnostics?: Diagnostic[];
   renderCandidate(
     inference: AgenticInferenceArtifact,
     revision: number,
@@ -70,6 +73,8 @@ export async function runCorrectionLoop(
     let request: AgentInferenceRequest | undefined;
     let usage: CorrectionPassRecord['usage'];
     const providerDiagnostics: Diagnostic[] = [];
+    if (revision === 0)
+      providerDiagnostics.push(...(options.baselineDiagnostics ?? []));
     if (revision > 0) {
       if (options.budgetExhausted?.(history) === true)
         return finish(history, 'budget-exhausted');
@@ -142,14 +147,16 @@ export async function runCorrectionLoop(
       throw new Error(
         'QA candidate revision does not match the render revision.',
       );
+    const recordRequest = revision === 0 ? options.baselineRequest : request;
+    const recordUsage = revision === 0 ? options.baselineUsage : usage;
     const record: CorrectionPassRecord = {
       revision,
       stage: revision === 0 ? 'baseline' : 'correction',
       inference,
       qa: evaluation.qa,
       diagnostics: [...providerDiagnostics, ...(evaluation.diagnostics ?? [])],
-      ...(request === undefined ? {} : { request }),
-      ...(usage === undefined ? {} : { usage }),
+      ...(recordRequest === undefined ? {} : { request: recordRequest }),
+      ...(recordUsage === undefined ? {} : { usage: recordUsage }),
     };
     const previousBest = rankQaCandidates(
       history.passes.map((item) => item.qa),

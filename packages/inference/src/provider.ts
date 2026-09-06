@@ -48,6 +48,10 @@ export interface AgentInferenceRequest {
     assets: AgentAssetEvidence[];
   };
   diagnostics: Diagnostic[];
+  visualEvidence?: {
+    referenceImagePath: string;
+    candidateImagePath?: string;
+  };
   invariants: {
     sourceNodeIds: string[];
     maxDecisions: number;
