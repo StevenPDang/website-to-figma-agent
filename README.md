@@ -79,7 +79,7 @@ Rebuild and reload the development plugin after updating the project.
 ### 3. Start an import and connect
 
 ```sh
-node apps/cli/dist/src/index.js import 'https://skanvi.com/'
+node apps/cli/dist/src/index.js import 'https://example.com/'
 ```
 
 The CLI prints a temporary **session JSON** and waits for a connection. Paste that
@@ -96,7 +96,7 @@ more time to connect, add `--plugin-timeout 300`.
 With the Codex CLI installed and authenticated:
 
 ```sh
-node apps/cli/dist/src/index.js import 'https://skanvi.com/' \
+node apps/cli/dist/src/index.js import 'https://example.com/' \
   --inference agentic --provider local-codex --max-renders 3
 ```
 
@@ -109,7 +109,7 @@ scaling up runs. See [detailed setup and controls](docs/getting-started.md).
 To capture and compile artifacts without connecting to Figma:
 
 ```sh
-node apps/cli/dist/src/index.js import 'https://skanvi.com/' --capture-only
+node apps/cli/dist/src/index.js import 'https://example.com/' --capture-only
 ```
 
 Add `--inference agentic` to also invoke the provider in capture-only mode.
