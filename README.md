@@ -9,6 +9,8 @@ Deterministic mode is the default. Agentic mode is opt-in through a provider-neu
 adapter, with local Codex currently implemented. Website generation from a customized
 Figma design is a future feature.
 
+The broader goal of this pipeline is to reverse-engineer existing websites into an editable design representation where users can apply their own stylistic choices. This forms one half of a bidirectional agentic workflow. By preserving both the original browser evidence and the resulting Figma structure, an agent can gain enough context from the Figma domain to accurately regenerate the customized design as a functional webpage.
+
 ## Pipeline overview
 
 ```mermaid
