@@ -118,6 +118,21 @@ export async function runImport(options: ImportOptions) {
       allowLoopback: options.allowLoopback ?? false,
     });
     const captured = await captureDom(session.page);
+    const capturedSourceIds = new Set(
+      captured.nodes.map((node) => node.sourceNodeId),
+    );
+    const capturedMediaAssets = media.assets.filter((asset) =>
+      capturedSourceIds.has(asset.sourceNodeId),
+    );
+    const orphanAssetDiagnostics: Diagnostic[] = media.assets
+      .filter((asset) => !capturedSourceIds.has(asset.sourceNodeId))
+      .map((asset) => ({
+        code: 'ASSET_SOURCE_NOT_CAPTURED',
+        severity: 'warning',
+        sourceNodeId: asset.sourceNodeId,
+        message:
+          'A dynamic asset source disappeared before DOM capture and was omitted.',
+      }));
     const screenshot = await captureScreenshot(session.page);
     await writeFile(`${outputDir}/reference.png`, screenshot.bytes);
     for (const asset of media.assets)
@@ -133,7 +148,7 @@ export async function runImport(options: ImportOptions) {
       payload: {
         rootNodeId: captured.rootNodeId,
         nodes: captured.nodes,
-        assets: media.assets.map((asset) => {
+        assets: capturedMediaAssets.map((asset) => {
           const { bytes, ...reference } = asset;
           if (bytes.byteLength !== reference.byteLength)
             throw new Error('Captured asset byte length mismatch');
@@ -149,7 +164,7 @@ export async function runImport(options: ImportOptions) {
       await persist(deterministic, 'deterministic-inference');
 
     const fallbackSources = new Set(
-      media.assets
+      capturedMediaAssets
         .filter((asset) => asset.kind === 'image')
         .map((asset) => asset.sourceNodeId),
     );
@@ -168,6 +183,7 @@ export async function runImport(options: ImportOptions) {
       ...preparation.diagnostics,
       ...captureDiagnostics,
       ...media.diagnostics,
+      ...orphanAssetDiagnostics,
       ...screenshot.diagnostics,
     ];
 
@@ -187,16 +203,16 @@ export async function runImport(options: ImportOptions) {
     let agentAvailable = provider !== undefined;
     if (provider !== undefined) {
       progress(`Running initial inference with ${provider.providerId}…`);
-      initialRequest = buildPipelineAgentRequest(
-        ir,
-        deterministic,
-        'initial',
-        1,
-        (options.maxRenders ?? 3) - 1,
-        diagnostics,
-        { referenceImagePath: resolve(outputDir, 'reference.png') },
-      );
       try {
+        initialRequest = buildPipelineAgentRequest(
+          ir,
+          deterministic,
+          'initial',
+          1,
+          (options.maxRenders ?? 3) - 1,
+          diagnostics,
+          { referenceImagePath: resolve(outputDir, 'reference.png') },
+        );
         const inferred = await provider.infer(initialRequest);
         if (inferred.ok) {
           initialUsage = inferred.usage;
@@ -239,7 +255,7 @@ export async function runImport(options: ImportOptions) {
           deterministic,
           { decisions: [] },
           {
-            maxDecisions: initialRequest.invariants.maxDecisions,
+            maxDecisions: initialRequest?.invariants.maxDecisions ?? 100,
           },
         );
     }
@@ -297,7 +313,7 @@ export async function runImport(options: ImportOptions) {
           protocolVersion: LIVE_PROTOCOL_VERSION,
           runId,
           scene,
-          assets: uniqueWireAssets(media.assets),
+          assets: uniqueWireAssets(capturedMediaAssets),
           width: screenshot.width,
           height: screenshot.height,
         });
@@ -518,7 +534,7 @@ function buildPipelineAgentRequest(
       .flatMap((request) => request.section.nodes)
       .map((node) => [node.sourceNodeId, node]),
   );
-  return {
+  const request: AgentInferenceRequest = {
     ...first,
     section: {
       sectionId:
@@ -528,6 +544,12 @@ function buildPipelineAgentRequest(
     },
     ...(visualEvidence === undefined ? {} : { visualEvidence }),
   };
+  if (
+    nodes.size > 15_000 ||
+    Buffer.byteLength(JSON.stringify(request), 'utf8') > 16_000_000
+  )
+    throw new Error('Combined agent evidence exceeds the node or byte budget.');
+  return request;
 }
 
 function uniqueWireAssets(

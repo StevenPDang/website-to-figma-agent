@@ -257,7 +257,14 @@ async function readProposal(
     ) {
       return failure(
         'CODEX_INVALID_OUTPUT',
-        'Codex returned a proposal that does not match the inference schema.',
+        `Codex returned a proposal that does not match the inference schema.${
+          validated.ok
+            ? ''
+            : ` ${validated.issues
+                .slice(0, 3)
+                .map((issue) => `${issue.path}: ${issue.message}`)
+                .join('; ')}`
+        }`,
       );
     }
     return {

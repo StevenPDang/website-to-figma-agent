@@ -580,14 +580,15 @@ one milestone. Discoveries that change these contracts return to this gate.
 
 ## Approved Live Integration
 
-Protocol 1.1.0 uses authenticated loopback WebSockets (CLI port 3847, explicitly
-allowlisted as `http://localhost:3847` in the development plugin manifest) with a bounded complete-scene
-request, content-addressed base64 assets, a destination acknowledgement, and a
-structured result plus PNG export. Protocol 1.0.0 remains available for legacy
-contract tests but is rejected by the live importer. A plugin instance caches each
-run request and result, including in-flight work, for bounded reconnect retries.
-Closing/restarting the plugin requires a new CLI run; it never automatically
-replays an interrupted import into a new plugin instance.
+Protocol 1.2.0 uses authenticated loopback WebSockets (CLI port 3847, explicitly
+allowlisted as `http://localhost:3847` in the development plugin manifest) with up
+to three monotonic candidate revisions, content-addressed base64 assets, candidate
+PNG exports, and explicit finalization or cancellation. Each plugin-owned candidate
+root carries run, revision, and lifecycle metadata. Same-revision retries return the
+cached result; finalization removes only non-selected roots owned by that run.
+Protocols 1.0.0 and 1.1.0 remain represented by legacy tests or artifacts but are
+rejected by the live importer with rebuild/reload guidance. Closing or restarting
+the plugin requires a new CLI run and preserves the last complete candidate.
 
 The CLI defaults to live import; `--capture-only` explicitly prepares artifacts
 without connecting. It prints a short-lived connection descriptor for pasting into

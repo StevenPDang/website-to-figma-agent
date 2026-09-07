@@ -95,6 +95,29 @@ function options(values: QaCandidate[]) {
 }
 
 describe('correction loop', () => {
+  it('retains the completed candidate when a provider throws', async () => {
+    const setup = options([candidate(0, 0.8, 1)]);
+    const result = await runCorrectionLoop({
+      ...setup,
+      provider: {
+        providerId: 'throwing',
+        infer: () => Promise.reject(new Error('offline')),
+      },
+    });
+    expect(result.history).toMatchObject({
+      selectedRevision: 0,
+      stopReason: 'provider-failure',
+      failedAttempt: { diagnostics: [{ code: 'AGENT_PROVIDER_FAILED' }] },
+    });
+  });
+
+  it('does not pass high SSIM when changed pixels exceed the threshold', async () => {
+    const qa = candidate(0, 0.98, 0);
+    qa.report.payload.metrics.changedPixelRatio = 0.2;
+    const result = await runCorrectionLoop({ ...options([qa]), maxRenders: 1 });
+    expect(result.history.stopReason).toBe('render-limit');
+  });
+
   it('renders three bounded candidates and selects the structurally best pass', async () => {
     const result = await runCorrectionLoop(
       options([

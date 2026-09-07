@@ -17,6 +17,7 @@ import {
 import type {
   AgentInferenceProposal,
   AgentInferenceRequest,
+  AgentInferenceResult,
   InferenceProvider,
 } from './provider.js';
 
@@ -66,7 +67,11 @@ export async function runCorrectionLoop(
       candidate.classifications.every(
         (item) => item.category === 'rendering-noise',
       ) &&
-      candidate.report.payload.metrics.ssim >= 0.95);
+      candidate.report.payload.metrics.ssim >= 0.95 &&
+      candidate.report.payload.metrics.changedPixelRatio <= 0.05 &&
+      !candidate.report.payload.diagnostics.some(
+        (item) => item.code === 'QA_NOT_RUN' || item.severity === 'error',
+      ));
   let history: CandidateHistory = { passes: [] };
   let inference = options.baselineInference;
   for (let revision = 0; revision < maxRenders; revision += 1) {
@@ -78,15 +83,28 @@ export async function runCorrectionLoop(
     if (revision > 0) {
       if (options.budgetExhausted?.(history) === true)
         return finish(history, 'budget-exhausted');
-      request = options.buildRequest(revision, history);
-      const result = await options.provider.infer(request);
+      let result: AgentInferenceResult;
+      try {
+        request = options.buildRequest(revision, history);
+        result = await options.provider.infer(request);
+      } catch {
+        result = {
+          ok: false,
+          diagnostic: {
+            code: 'AGENT_PROVIDER_FAILED',
+            severity: 'error',
+            message:
+              'Correction provider failed. The best completed candidate is retained.',
+          },
+        };
+      }
       if (!result.ok) {
         providerDiagnostics.push(result.diagnostic);
         history = {
           ...history,
           failedAttempt: {
             revision,
-            request,
+            ...(request === undefined ? {} : { request }),
             diagnostics: providerDiagnostics,
           },
         };
@@ -102,7 +120,7 @@ export async function runCorrectionLoop(
           ...history,
           failedAttempt: {
             revision,
-            request,
+            ...(request === undefined ? {} : { request }),
             diagnostics: [
               ...providerDiagnostics,
               {

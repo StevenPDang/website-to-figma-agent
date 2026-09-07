@@ -62,7 +62,12 @@ process.stdin.on('end', () => {
     process.stdout.write('x'.repeat(10000));
     return;
   }
-  const proposal = request.runId === 'run:invalid-root'
+  const decision = { decisionId: 'decision:name', sourceNodeIds: ['source:root'], kind: 'semantic-name', confidence: 0.9, evidence: ['Visible title'], fallback: 'geometry', origin: 'agent', payload: { name: 'Hero' } };
+  const proposal = request.runId === 'run:duplicate'
+    ? { decisions: [decision, decision] }
+    : request.runId === 'run:valid-decision'
+    ? { decisions: [decision] }
+    : request.runId === 'run:invalid-root'
     ? { decisions: [], extra: true }
     : { decisions: [] };
   const output = request.runId === 'run:malformed'
@@ -100,6 +105,28 @@ function provider(overrides: Record<string, unknown> = {}) {
 }
 
 describe('createCodexInferenceProvider', () => {
+  it('validates populated decisions and reports rejected field paths', async () => {
+    const valid = await provider().infer({
+      ...request,
+      runId: 'run:valid-decision',
+    });
+    expect(valid).toMatchObject({
+      ok: true,
+      proposal: { decisions: [{ kind: 'semantic-name' }] },
+    });
+    const invalid = await provider().infer({
+      ...request,
+      runId: 'run:duplicate',
+    });
+    expect(invalid.ok).toBe(false);
+    if (!invalid.ok) {
+      expect(invalid.diagnostic.code).toBe('CODEX_INVALID_OUTPUT');
+      expect(invalid.diagnostic.message).toContain(
+        '/payload/decisions/1/decisionId',
+      );
+    }
+  });
+
   it('uses isolated arguments and normalizes proposal and usage', async () => {
     const result = await provider().infer(request);
 

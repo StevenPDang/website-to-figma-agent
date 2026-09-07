@@ -26,10 +26,12 @@ Have the user load `apps/figma-plugin/dist/plugin/manifest.json` as a Figma Desk
 development plugin in the intended destination page. Run:
 
 ```sh
-node apps/cli/dist/src/index.js import <source-url>
+node apps/cli/dist/src/index.js import <source-url> --inference agentic
 ```
 
-The CLI prints a short-lived connection JSON object. The user pastes it into the
+Use `--inference deterministic` for the model-free path. Agentic mode uses the
+provider-neutral `local-codex` adapter, at most three candidate renders, and
+structural QA selection. The CLI prints a short-lived connection JSON object. The user pastes it into the
 plugin and selects **Connect and import into this page**, confirming the displayed
 destination. Never persist the token. Default mode is `single`, 1440×900, full
 page height. Other modes are not yet supported; do not simulate their completion.
@@ -39,7 +41,8 @@ partial status and exit code 2 by design. Live import also returns 2 for missing
 plugins, unsupported features, font substitutions, or failed visual QA. Exit 0
 requires a successful import and a measured QA pass. Read
 `docs/getting-started.md` and `docs/limitations.md` for setup and supported mappings.
-Do not describe a successful capture or a synthetic test peer as a finished Figma
+Agentic runs also retain `deterministic-inference.json`, candidate artifacts, and
+`correction-history.json` with usage and the selected revision. Do not describe a successful capture or a synthetic test peer as a finished Figma
 conversion. A live Figma smoke test remains necessary for visual acceptance.
 
 ## Pipeline Contract

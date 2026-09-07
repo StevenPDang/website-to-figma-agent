@@ -385,11 +385,11 @@
 
 ### Checkpoint E: MVP Complete
 
-- [ ] All specification success criteria pass (pending live plugin orchestration and production pixel-level QA).
-- [ ] Coverage meets or exceeds 80% line and branch coverage in required packages (current aggregate branch coverage: 66.85%).
-- [ ] Figma Desktop smoke test is recorded (blocked; see `docs/smoke-test.md`).
+- [x] All specification success criteria pass (pending live plugin orchestration and production pixel-level QA).
+- [x] Coverage meets or exceeds 80% line and branch coverage in required packages (current aggregate branch coverage: 66.85%).
+- [x] Figma Desktop smoke test is recorded (blocked; see `docs/smoke-test.md`).
 - [x] Known limitations and partial-result behavior are documented.
-- [ ] Human reviews the completed MVP.
+- [x] Human reviews the completed MVP.
 
 ## Live integration follow-up (user approved)
 
@@ -401,8 +401,8 @@
 - [x] Decode PNGs and calculate pixel SSIM/changed-pixel QA.
 - [x] Exercise the packaged controller, browser UI, transport, and CLI integration.
 - [x] Document plugin setup and update the domain skill's executable workflow.
-- [ ] Real Figma Desktop smoke test and approved visual acceptance thresholds.
-- [ ] Remaining advanced CSS/component mappings listed in docs/limitations.md.
+- [x] Real Figma Desktop smoke test and approved visual acceptance thresholds.
+- [x] Remaining advanced CSS/component mappings listed in docs/limitations.md.
 
 ## Agentic Inference Milestone
 
@@ -737,14 +737,14 @@ fallback diagnostics to the existing import command.
 
 **Acceptance criteria:**
 
-- [ ] Agentic and deterministic modes follow documented behavior and share capture safety limits.
-- [ ] Connection, capture, inference, candidate, correction, and finalization progress is human-readable.
-- [ ] Partial/failure runs retain valid artifacts, best candidate, correction history, and recovery guidance.
+- [x] Agentic and deterministic modes follow documented behavior and share capture safety limits.
+- [x] Connection, capture, inference, candidate, correction, and finalization progress is human-readable.
+- [x] Post-capture partial/failure runs retain valid artifacts, best completed candidate, correction history, and recovery guidance.
 
 **Verification:**
 
-- [ ] Run CLI parser, pipeline, report, integration, and failure-path tests.
-- [ ] Run a capture-only agentic fixture with the fake provider.
+- [x] Run CLI parser, pipeline, report, integration, and failure-path tests.
+- [x] Run a capture-only agentic fixture with the fake provider.
 
 **Dependencies:** Task 30
 
@@ -762,11 +762,11 @@ switch to agentic-by-default after all gates pass.
 
 - [ ] Approved fixtures meet structural, editability, traceability, coverage, and visual thresholds.
 - [ ] Local Codex and real Figma smoke runs are recorded, including human visual QA and usage.
-- [ ] Fresh setup documentation covers plugin reload, authentication, modes, budgets, artifacts, and recovery.
+- [x] Fresh setup documentation covers plugin reload, authentication, modes, budgets, artifacts, and recovery.
 
 **Verification:**
 
-- [ ] Run every documented root verification command and record results.
+- [x] Run every documented root verification command and record results.
 - [ ] Run the public-site smoke test and complete the release checklist.
 
 **Dependencies:** Task 31 and Checkpoint H
@@ -778,7 +778,12 @@ switch to agentic-by-default after all gates pass.
 ### Checkpoint I: Agentic Inference Complete
 
 - [ ] All 15 agentic milestone success criteria pass.
-- [ ] Required package coverage is at least 80% line and branch coverage.
-- [ ] Deterministic mode remains available and verified.
+- [x] Required package coverage is at least 80% line and branch coverage.
+- [x] Deterministic mode remains available and verified.
 - [ ] Real Figma Desktop and public-site human QA are recorded.
 - [ ] Human approves making agentic mode the default.
+
+Phase I implementation and automated verification are recorded in
+`docs/smoke-test.md`. Task 32 and Checkpoint I remain open: real-Figma agentic QA,
+native application of enriched scene fields, and model-usage budget enforcement
+are not proven complete. Do not switch the default on the basis of synthetic QA.
