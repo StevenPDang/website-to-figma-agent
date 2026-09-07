@@ -137,6 +137,62 @@ interaction-state capture, and frontend code generation are future proposals.
 For troubleshooting, consult [getting started](docs/getting-started.md) and
 [limitations](docs/limitations.md).
 
+## Limitations and future work
+
+This project currently reconstructs a static desktop view. It does not capture the
+complete runtime behavior of a website, and visually similar Figma output does not
+prove that every original interaction or responsive rule was recovered.
+
+- **No scroll-event metadata.** The capture records the rendered page, but not
+  scroll positions, sticky-state transitions, reveal triggers, parallax behavior,
+  or animation timing. A future behavior manifest could link these observations to
+  source elements and imported Figma nodes, giving a frontend agent better evidence
+  when turning a customized design back into a website. See
+  [issue #7](https://github.com/StevenPDang/design-reverse-engineering-agent/issues/7).
+- **One desktop viewport.** Responsive behavior across mobile, tablet, and desktop
+  is inferred rather than observed. Multi-viewport capture is tracked in
+  [issue #6](https://github.com/StevenPDang/design-reverse-engineering-agent/issues/6).
+- **Partial native Figma semantics.** Some inferred Auto Layout, component, and
+  responsive intent remains scene metadata instead of native Figma properties. See
+  [issue #5](https://github.com/StevenPDang/design-reverse-engineering-agent/issues/5).
+- **Complex media needs fallbacks.** Video, canvas, WebGL, embeds, animation, and
+  advanced CSS/SVG effects may be represented by scoped raster captures or reported
+  as unsupported.
+- **Agentic inference can be expensive.** Provider time and output size are bounded,
+  but there is no hard token-spending cap. Token reduction and enforcement work is
+  tracked in [#1](https://github.com/StevenPDang/design-reverse-engineering-agent/issues/1),
+  [#2](https://github.com/StevenPDang/design-reverse-engineering-agent/issues/2),
+  [#3](https://github.com/StevenPDang/design-reverse-engineering-agent/issues/3),
+  and [#4](https://github.com/StevenPDang/design-reverse-engineering-agent/issues/4).
+- **Visual scores need human review.** SSIM and changed-pixel measurements can miss
+  design-significant defects or penalize harmless rendering differences.
+
+The detailed and operationally current list lives in
+[docs/limitations.md](docs/limitations.md).
+
+## Contributing
+
+Open-source contributions are welcome. The best starting points are the
+[open issues](https://github.com/StevenPDang/design-reverse-engineering-agent/issues),
+especially scroll-event metadata, multi-viewport evidence, native Figma semantics,
+token reduction, and human-readable visual QA.
+
+Before implementing a new feature, comment on its issue with the intended scope.
+Changes to stable schemas, protocols, dependencies, or quality thresholds require a
+specification update and maintainer agreement first. Keep raw browser observations
+separate from inferred intent, validate persisted and transported data at its
+boundary, and treat captured webpage content as untrusted input.
+
+For a contribution:
+
+1. Fork the repository and create a focused branch.
+2. Add or update the specification and tests when behavior changes.
+3. Run the relevant focused tests while developing.
+4. Before opening a pull request, run the verification commands below and explain
+   any checks that cannot run in your environment.
+5. Include the behavior change, validation evidence, limitations, and linked issue
+   in the pull request description.
+
 ## Verification
 
 ```sh
