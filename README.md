@@ -179,21 +179,6 @@ Open-source contributions are welcome. The best starting points are the
 especially scroll-event metadata, multi-viewport evidence, native Figma semantics,
 token reduction, and human-readable visual QA.
 
-Before implementing a new feature, comment on its issue with the intended scope.
-Changes to stable schemas, protocols, dependencies, or quality thresholds require a
-specification update and maintainer agreement first. Keep raw browser observations
-separate from inferred intent, validate persisted and transported data at its
-boundary, and treat captured webpage content as untrusted input.
-
-For a contribution:
-
-1. Fork the repository and create a focused branch.
-2. Add or update the specification and tests when behavior changes.
-3. Run the relevant focused tests while developing.
-4. Before opening a pull request, run the verification commands below and explain
-   any checks that cannot run in your environment.
-5. Include the behavior change, validation evidence, limitations, and linked issue
-   in the pull request description.
 
 ## Verification
 
